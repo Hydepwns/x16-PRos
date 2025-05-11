@@ -1,0 +1,13 @@
+# Secrets secrets are no fun, but they're fun to keep iron-ically
+iron-keep/*
+
+# Build files (you can comment this out if you want)
+*.bin
+*.img
+*.iso
+*.vdi
+*.vmdk
+
+# Temporary files
+*.tmp
+*.bak
