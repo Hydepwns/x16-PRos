@@ -1,117 +1,79 @@
-; BASIC INPUT/OUTPUT LIB
-%ifndef BASICIO
-%define BASICIO
+; =============================================
+; x16-PRos IO Library
+; =============================================
 
+%ifndef IO_INCLUDED
+%define IO_INCLUDED
 
-; Print String to Screen. Text Mode
-; si - string address
-print_string:
-    mov ah, 0x0E
-    mov bh, 0x00
-    mov bl, 0x0F
-.print_char:
-    lodsb
-    cmp al, 0
-    je .done
-    int 0x10
-    jmp .print_char
-.done:
-    ret
+%include "src/lib/constants.inc"
+%include "src/lib/ui.inc"
 
+; External symbols from io.asm
+extern input_buffer
+extern error_messages
+extern err_none_msg
+extern err_disk_read_msg
+extern err_disk_write_msg
+extern err_invalid_sect_msg
+extern err_invalid_clust_msg
+extern err_no_space_msg
+extern err_dir_full_msg
+extern err_file_exists_msg
+extern err_file_not_found_msg
+extern err_invalid_name_msg
+extern err_access_denied_msg
+extern err_bad_chain_msg
+extern err_invalid_size_msg
+extern err_buffer_overflow_msg
+extern err_invalid_attr_msg
+extern err_system_msg
 
-; Print Newline to Screen. Text Mode
-; no args
-print_newline:
-    mov ah, 0x0E
-    mov al, 0x0D
-    int 0x10
-    mov al, 0x0A
-    int 0x10
-    ret
-	
-; Green text
-; si - string
-print_string_green:
-    mov ah, 0x0E
-    mov bh, 0x00
-    mov bl, 0x0A
-.print_char:
-    lodsb
-    cmp al, 0
-    je .done
-    int 0x10
-    jmp .print_char
-.done:
-    ret
-    
-; Cyan text
-; si - string
-print_string_cyan:
-    mov ah, 0x0E
-    mov bh, 0x00
-    mov bl, 0x0B
-.print_char:
-    lodsb
-    cmp al, 0
-    je .done
-    int 0x10
-    jmp .print_char
-.done:
-    ret
-    
-; Red text
-; si - string
-print_string_red:
-    mov ah, 0x0E
-    mov bh, 0x00
-    mov bl, 0x055FC
-.print_char:
-    lodsb
-    cmp al, 0
-    je .done
-    int 0x10
-    jmp .print_char
-.done:
-    ret
-	
-; Scan String From Input
-; si - buffer
-; bx - max count
-scan_string:
-    mov di, si
-    xor cx, cx
-.read_loop:
-    mov ah, 0x00
-    int 0x16
-    cmp al, 0x0D
-    je .done_read
-    cmp al, 0x08
-    je .handle_backspace
-    cmp cx, bx
-    jge .done_read
-    stosb
-    mov ah, 0x0E
-    mov bl, 0x1F
-    int 0x10
-    inc cx
-    jmp .read_loop
+; External functions from io.asm
+extern read_char
+extern read_char_silent
+extern read_string
+extern print_char
+extern print_string
+extern print_number
+extern print_hex
+extern print_newline
+extern print_space
+extern display_error
 
-.handle_backspace:
-    cmp di, si
-    je .read_loop
-    dec di
-    dec cx
-    mov ah, 0x0E
-    mov al, 0x08
-    int 0x10
-    mov al, ' '
-    int 0x10
-    mov al, 0x08
-    int 0x10
-    jmp .read_loop
+; Color-specific print macros
+%macro print_string_white 0
+    mov bl, COLOR_WHITE
+    call print_string
+%endmacro
 
-.done_read:
-    mov byte [di], 0
-    ret
+%macro print_string_red 0
+    mov bl, COLOR_LIGHT_RED
+    call print_string
+%endmacro
 
-%endif
+%macro print_string_green 0
+    mov bl, COLOR_LIGHT_GREEN
+    call print_string
+%endmacro
+
+%macro print_string_blue 0
+    mov bl, COLOR_LIGHT_BLUE
+    call print_string
+%endmacro
+
+%macro print_string_cyan 0
+    mov bl, COLOR_LIGHT_CYAN
+    call print_string
+%endmacro
+
+%macro print_string_yellow 0
+    mov bl, COLOR_YELLOW
+    call print_string
+%endmacro
+
+%macro print_string_magenta 0
+    mov bl, COLOR_LIGHT_MAGENTA
+    call print_string
+%endmacro
+
+%endif ; IO_INCLUDED 
