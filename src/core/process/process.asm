@@ -21,6 +21,7 @@ section .text
 ; Initialize process management
 ; Input: None
 ; Output: None
+global process_init
 process_init:
     push ax
     push bx
@@ -80,6 +81,7 @@ process_init:
 ;       BX = stack size
 ;       CL = priority
 ; Output: AX = process ID (0 if failed)
+global process_create
 process_create:
     push bx
     push cx
@@ -150,6 +152,7 @@ process_create:
 ; Terminate process
 ; Input: AX = process ID
 ; Output: None
+global process_terminate
 process_terminate:
     push ax
     push bx
@@ -192,6 +195,7 @@ process_terminate:
 ; Schedule next process
 ; Input: None
 ; Output: None
+global process_schedule
 process_schedule:
     push ax
     push bx
@@ -258,8 +262,12 @@ switch_context:
     mov [es:di + PROCESS_ENTRY_ES], es
     mov [es:di + PROCESS_ENTRY_SS], ss
     mov [es:di + PROCESS_ENTRY_CS], cs
-    mov [es:di + PROCESS_ENTRY_IP], ip
-    mov [es:di + PROCESS_ENTRY_FLAGS], flags
+    ; Save FLAGS using pushf/popf
+    pushf
+    pop ax
+    mov [es:di + PROCESS_ENTRY_FLAGS], ax
+    ; Note: Saving IP (instruction pointer) directly is not possible in 16-bit x86.
+    ; A real context switch would save the return address from the stack or use a far call/iret.
 
     ; Load next process state
     mov ax, [next_process]
@@ -279,8 +287,11 @@ switch_context:
     mov es, [es:di + PROCESS_ENTRY_ES]
     mov ss, [es:di + PROCESS_ENTRY_SS]
     mov cs, [es:di + PROCESS_ENTRY_CS]
-    mov ip, [es:di + PROCESS_ENTRY_IP]
-    mov flags, [es:di + PROCESS_ENTRY_FLAGS]
+    ; Restore FLAGS using push/popf
+    push word [es:di + PROCESS_ENTRY_FLAGS]
+    popf
+    ; Note: Restoring IP (instruction pointer) directly is not possible in 16-bit x86.
+    ; A real context switch would set up the stack and use iret or retf to switch IP/CS/FLAGS.
 
     mov al, ERR_NONE
     call set_error
@@ -338,7 +349,8 @@ add_to_queue:
     mov ax, [process_queue_tail]
     mov bx, PROCESS_QUEUE_SEG
     mov es, bx
-    mov [es:ax], di
+    mov si, ax
+    mov [es:si], di
     add ax, 2
     cmp ax, PROCESS_QUEUE_SIZE
     jb .no_wrap
@@ -368,7 +380,8 @@ remove_from_queue:
 .search_loop:
     cmp ax, cx
     je .not_found
-    mov dx, [es:ax]
+    mov si, ax
+    mov dx, [es:si]
     cmp dx, di
     je .found
     add ax, 2
@@ -385,7 +398,9 @@ remove_from_queue:
     cmp bx, [process_queue_tail]
     je .done_shift
     mov dx, [es:bx]
-    mov [es:bx - 2], dx
+    mov si, bx
+    sub si, 2
+    mov [es:si], dx
     jmp .shift_loop
 
 .done_shift:

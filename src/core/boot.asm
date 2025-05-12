@@ -71,7 +71,7 @@ boot_code:
     
     ; System checks
     call check_disk
-    jc disk_error
+    jc kernel_error
 
     ; All checks passed
     mov si, ready_message
@@ -88,7 +88,7 @@ boot_code:
     mov dh, 0x00        ; Head 0
     mov dl, DISK_FIRST_HD        ; First hard disk
     int BIOS_DISK_INT
-    jc disk_error
+    jc fat_error
 
     ; Load root directory
     mov ax, DIR_BUFFER_SEG
@@ -101,7 +101,7 @@ boot_code:
     mov dh, 0x00        ; Head 0
     mov dl, DISK_FIRST_HD        ; First hard disk
     int BIOS_DISK_INT
-    jc disk_error
+    jc dir_error
 
     mov si, wait_msg
     call print_string
@@ -113,6 +113,21 @@ boot_code:
     jmp KERNEL_SEG:KERNEL_OFF
 
 ; Error handlers
+kernel_error:
+    mov si, kernel_error_message
+    call print_string
+    jmp $
+
+fat_error:
+    mov si, fat_error_message
+    call print_string
+    jmp $
+
+dir_error:
+    mov si, dir_error_message
+    call print_string
+    jmp $
+
 disk_error:
     mov si, disk_error_message
     call print_string
@@ -147,15 +162,17 @@ check_disk:
     mov al, 6        
     mov ch, 0         
     mov dh, 0        
-    mov cl, FAT_START_SECTOR       
+    mov cl, KERNEL_START_SECTOR ; Use constant for kernel sector
     mov bx, KERNEL_SEG     
     int BIOS_DISK_INT         
     ret
 
 ; Data section
 banner db "x16-PRos Booting...", CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, 0
-disk_error_message db "Disk [ERROR]", CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, 0
-ready_message db "Disk [OK]", CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, 
+kernel_error_message db "KERNEL LOAD ERROR", CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, 0
+fat_error_message db "FAT LOAD ERROR", CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, 0
+dir_error_message db "DIR LOAD ERROR", CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, 0
+disk_error_message db "Disk [ERROR]", CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, 
               db "RAM  [OK]", CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, 
               db "CPU  [OK]", CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, 0
 wait_msg db "Press any key to boot...", 0

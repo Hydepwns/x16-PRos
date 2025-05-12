@@ -37,6 +37,8 @@ section .data
     unknown_cmd db "Unknown command", 0
 
 section .text
+global shell_init
+global shell_run
 
 ; Initialize shell
 shell_init:

@@ -11,6 +11,8 @@ Centralized file for all global constants and macros used throughout x16-PRos. A
 **Include Order Convention:**
 All assembly files should place `%include` statements (especially for `constants.inc`) at the very top, before any use of constants or ORG directives.
 
+For NASM flat binary output (`-f bin`), do NOT use `section .text` or `section .data`. Use `%ifidn __OUTPUT_FORMAT__, "bin"` to conditionally set `ORG`.
+
 ### `error_codes.inc`
 
 Definitions for system-wide error codes. Used for consistent error reporting across modules.
@@ -164,6 +166,8 @@ For detailed documentation, see comments in each `.inc` file.
 
 - All modules include relevant `.inc` files from `lib/` at the top of each source file.
 - No special build steps; included as part of standard assembly and linking.
+
+For flat binary output, do NOT use section directives. Use conditional `ORG` as above.
 
 ## References & Further Reading
 

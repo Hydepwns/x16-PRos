@@ -38,12 +38,15 @@ FAT_EOF         equ 0xFF8     ; End of file marker
 
 ; FAT Operations
 section .text
-global fat_next
+global fat_init
 global fat_alloc
 global fat_free
+global fat_next
 global fat_get_next
 global fat_set_next
 global fat_is_valid
+global fat_mark_bad
+global fat_free_chain
 
 ; Initialize FAT
 ; Input: None

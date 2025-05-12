@@ -34,6 +34,12 @@ MAX_FILE_SIZE  equ 0xFFFFFF   ; Maximum file size (3 bytes in directory entry)
 
 ; File Operations
 section .text
+global file_init
+global file_create
+global file_delete
+global file_read
+global file_write
+global file_exists
 
 ; Create a new file
 ; Input: DS:SI = pointer to filename (8.3 format)

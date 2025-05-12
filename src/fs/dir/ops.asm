@@ -15,6 +15,13 @@ extern dir_init
 extern dir_create
 extern dir_delete
 
+global dir_set_attributes
+global dir_get_attributes
+global dir_set_size
+global dir_get_size
+global dir_set_cluster
+global dir_get_cluster
+
 ; Set file attributes by filename
 ; Input: DS:SI = filename, AL = new attributes
 ; Output: CF=0 if success, CF=1 if error

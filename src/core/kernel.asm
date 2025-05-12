@@ -77,6 +77,11 @@ kernel_start:
     ; If we get here, something went wrong
     jmp $
 
+.init_error:
+    ; Handle initialization error (halt or loop)
+    cli
+    hlt
+
 ; Initialize core modules
 ; Output: CF = 1 if initialization failed
 initialize_core_modules:
@@ -85,44 +90,98 @@ initialize_core_modules:
     push cx
     push dx
 
-    ; Initialize memory management
+    mov si, msg_starting
+    call print_string
+
     call memory_init
     call check_error
-    jc .error
+    jc .error_mem
+    mov si, msg_mem_ok
+    call print_string
 
-    ; Initialize interrupt handling
     call interrupts_init
     call check_error
-    jc .error
+    jc .error_int
+    mov si, msg_int_ok
+    call print_string
 
-    ; Initialize process management
     call process_init
     call check_error
-    jc .error
+    jc .error_proc
+    mov si, msg_proc_ok
+    call print_string
 
-    ; Set up timer interrupt handler
-    mov al, 0x20        ; Timer interrupt
+    mov al, 0x20
     mov bx, timer_handler
     call register_handler
     call check_error
-    jc .error
+    jc .error_timer
+    mov si, msg_timer_ok
+    call print_string
 
-    ; Enable timer interrupt
     mov al, 0x20
     call enable_interrupt
     call check_error
-    jc .error
+    jc .error_enable
+    mov si, msg_enable_ok
+    call print_string
 
-    ; Create system processes
     call create_system_processes
     call check_error
-    jc .error
+    jc .error_sysproc
+    mov si, msg_sysproc_ok
+    call print_string
 
-    clc                 ; Clear carry flag to indicate success
+    clc
     jmp .done
 
-.error:
-    stc                 ; Set carry flag to indicate error
+.error_mem:
+    mov si, msg_init_error
+    call print_string
+    mov al, [error_code]
+    call print_hex
+    stc
+    jmp .done
+
+.error_int:
+    mov si, msg_init_error
+    call print_string
+    mov al, [error_code]
+    call print_hex
+    stc
+    jmp .done
+
+.error_proc:
+    mov si, msg_init_error
+    call print_string
+    mov al, [error_code]
+    call print_hex
+    stc
+    jmp .done
+
+.error_timer:
+    mov si, msg_init_error
+    call print_string
+    mov al, [error_code]
+    call print_hex
+    stc
+    jmp .done
+
+.error_enable:
+    mov si, msg_init_error
+    call print_string
+    mov al, [error_code]
+    call print_hex
+    stc
+    jmp .done
+
+.error_sysproc:
+    mov si, msg_init_error
+    call print_string
+    mov al, [error_code]
+    call print_hex
+    stc
+    jmp .done
 
 .done:
     pop dx
@@ -210,6 +269,14 @@ check_error:
 ; Data section
 section .data
 error_code db 0
+msg_starting db "Starting kernel...", 13, 10, 0
+msg_mem_ok db "Memory OK", 13, 10, 0
+msg_int_ok db "Interrupts OK", 13, 10, 0
+msg_proc_ok db "Process OK", 13, 10, 0
+msg_timer_ok db "Timer handler OK", 13, 10, 0
+msg_enable_ok db "Timer enabled", 13, 10, 0
+msg_sysproc_ok db "System processes OK", 13, 10, 0
+msg_init_error db "INIT ERROR! Code: ", 0
 
 section .text
 
@@ -237,25 +304,6 @@ set_background_color:
     mov cx, 0x0000
     mov dx, 0x184F
     int BIOS_VIDEO_INT
-    ret
-
-print_interface:
-    mov si, header
-    mov bl, 0x0F
-    call print_string
-    mov si, info
-    mov bl, 0x0A
-    call print_string
-    mov si, menu
-    mov bl, 0x0A
-    call print_string
-    ret
-
-print_help:
-    mov si, menu
-    mov bl, 0x0A
-    call print_string
-    call print_newline
     ret
 
 shell:

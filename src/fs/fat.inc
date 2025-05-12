@@ -39,5 +39,9 @@ extern fat_free
 extern fat_next
 extern fat_mark_bad
 extern fat_validate_chain
+extern fat_set_next
+extern fat_get_next
+extern fat_is_valid
+extern fat_free_chain
 
 %endif ; FAT_INC_INCLUDED 

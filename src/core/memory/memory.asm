@@ -19,6 +19,7 @@ section .text
 ; Initialize memory management
 ; Input: None
 ; Output: None
+global memory_init
 memory_init:
     push ax
     push bx
@@ -58,6 +59,7 @@ memory_init:
 ; Allocate memory block
 ; Input: AX = size in bytes
 ; Output: AX = pointer to allocated memory (0 if failed)
+global memory_alloc
 memory_alloc:
     push bx
     push cx
@@ -110,9 +112,11 @@ memory_alloc:
     mov di, ax
     shr di, 13          ; Divide by 8KB to get block number
     mov cl, [es:di]
-    mov ch, 1
-    shl ch, cl
-    or cl, ch
+    mov ah, 1
+    mov cl, bl   ; bit offset (0-7)
+    shl ah, cl
+    not ah
+    and cl, ah
     mov [es:di], cl
 
     mov al, ERR_NONE
@@ -135,6 +139,7 @@ memory_alloc:
 ; Free memory block
 ; Input: AX = pointer to memory block
 ; Output: None
+global memory_free
 memory_free:
     push ax
     push bx
@@ -158,10 +163,11 @@ memory_free:
     shr di, 3           ; Divide by 8 to get byte offset
     and bx, 7           ; Get bit offset
     mov cl, [es:di]
-    mov ch, 1
-    shl ch, bl
-    not ch
-    and cl, ch
+    mov ah, 1
+    mov cl, bl   ; bit offset (0-7)
+    shl ah, cl
+    not ah
+    and cl, ah
     mov [es:di], cl
 
     mov al, ERR_NONE

@@ -19,6 +19,7 @@ section .text
 ; Initialize interrupt handling
 ; Input: None
 ; Output: None
+global interrupts_init
 interrupts_init:
     push ax
     push bx
@@ -115,6 +116,7 @@ init_pic:
 ; Input: AL = interrupt number
 ;       BX = handler address
 ; Output: None
+global register_handler
 register_handler:
     push ax
     push bx
@@ -160,6 +162,7 @@ register_handler:
 ; Enable interrupt
 ; Input: AL = interrupt number
 ; Output: None
+global enable_interrupt
 enable_interrupt:
     push ax
     push bx

@@ -71,6 +71,7 @@ KERNEL_SEGMENT       equ 0x0050
 KERNEL_OFFSET        equ 0x0000
 BOOT_SECTOR_SEG      equ 0x0000
 BOOT_SECTOR_OFF      equ 0x7C00
+KERNEL_START_SECTOR  equ 10      ; Kernel starts at sector 10 (data area)
 
 ; =============================================
 ; Disk Constants
