@@ -38,24 +38,28 @@ done
 
 # 3. Remove direct includes of errors.asm except in errors.asm itself
 echo "Auto-fixing direct includes of errors.asm..."
-find src/ -type f -name "*.asm" ! -name "errors.asm" -exec sed -i.bak '/%include "src\/fs\/errors.asm"/d' {} \;
+find src/ -type f -name "*.asm" ! -name "errors.asm" -exec \
+    sed -i.bak '/%include "src\/fs\/errors.asm"/d' {} \;
 
 # 4. Check for missing externs (warn only)
 echo "Checking for missing extern declarations for error functions..."
 for fn in "${ERROR_FUNCS[@]}"; do
-    grep -r "$fn" src/ | grep -v "extern $fn" | grep -v "global $fn" | grep -v "src/fs/errors.asm" | grep -v '\.inc' && \
+    grep -r "$fn" src/ | grep -v "extern $fn" | grep -v "global $fn" | \
+    grep -v "src/fs/errors.asm" | grep -v '\.inc' && \
     echo "WARNING: $fn used without extern or global declaration."
 done
 
 # 5. Remove global from helper functions (auto-fix, except for error functions)
 echo "Auto-fixing global directives for helper functions..."
-find src/ -type f -name "*.asm" ! -name "errors.asm" -print0 | while IFS= read -r -d '' f; do
-  awk '/^global[ \t]+(set_error|get_error|print_error)/ {print; next} /^global[ \t]+/ {next} {print}' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
-done
+find src/ -type f -name "*.asm" ! -name "errors.asm" -print0 | \
+    while IFS= read -r -d '' f; do \
+        awk '/^global[ \t]+(set_error|get_error|print_error)/ {print; next} /^global[ \t]+/ {next} {print}' \
+            "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+    done
 
 # 6. Clean up backup files
 find src/ -type f -name "*.bak" -delete
 
 echo "Linting and auto-fix complete."
 
-exit 0 
+exit 0

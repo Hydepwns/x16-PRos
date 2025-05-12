@@ -7,7 +7,8 @@
 ; Include error handling and constants
 %include "src/lib/constants.inc"
 %include "src/lib/error_codes.inc"
-%include "src/fs/fat.asm"
+%include "src/fs/fat.inc"
+; %include "src/fs/fat.asm"   ; Removed to prevent multiple definitions
 
 ; External symbols
 extern print_hex
@@ -15,6 +16,8 @@ extern print_string
 extern print_char
 extern print_newline
 extern print_space
+extern fat_validate_chain
+extern fat_next
 
 ; External error handling functions
 extern set_error

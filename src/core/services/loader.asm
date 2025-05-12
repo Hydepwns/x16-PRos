@@ -55,24 +55,6 @@ read_number:
 
 .done_read:
     mov byte [di], 0  ; Null-terminate string
-    call convert_to_number  ; Convert string to number
-    ret
-
-; Convert string to number
-convert_to_number:
-    mov si, number_buffer
-    xor ax, ax
-    xor cx, cx
-.convert_loop:
-    lodsb
-    cmp al, 0         ; Check for end of string
-    je .done_convert
-    sub al, '0'       ; Convert character to digit
-    imul cx, 10       ; Multiply current value by 10
-    add cx, ax        ; Add new digit
-    jmp .convert_loop
-.done_convert:
-    mov [sector_number], cx  ; Store number in variable
     ret
 
 ; Start program from specified sector

@@ -1,86 +1,54 @@
 # x16-PRos Test Suite
 
-This directory contains the test suite for the x16-PRos operating system, organized to match the source code structure.
+This directory contains all automated tests, macros, runners, and test scripts for x16-PRos. All test scripts and runners are organized here by subsystem.
 
 ## Directory Structure
 
-### `/core`
+- `core/`, `fs/`, `apps/`, `src/` — Test sources for each subsystem
+- `test_framework.inc`, `test_data.inc` — Shared macros and data for tests
+- `linker.ld` — Test linker script
+- `scripts/` — **All test, build, and utility scripts**
+- `run_tests.sh` — Main test runner (assembles, links, and runs all tests)
 
-Tests for core system components:
+## Test Output & Artifacts
 
-- `/boot` - Boot sector and initialization tests
-- `/kernel` - Kernel functionality and system services tests
-
-### `/fs`
-
-File system component tests:
-
-- `/fat` - FAT operations and integrity tests
-- `/dir` - Directory operations and consistency tests
-- `/file` - File operations and I/O tests
-- `/init` - File system initialization and sector size validation tests
-
-### `/apps`
-
-Application-specific tests:
-
-- `/calc` - Calculator functionality tests
-- `/snake` - Snake game tests
-- `/brainf` - Brainfuck interpreter tests
-- `/barchart` - Bar chart visualization tests
-- `/clock` - Clock application tests
-- `/write` - Text editor tests
-
-## Test Categories
-
-### Core System Tests
-
-- Boot sector validation
-- Kernel functionality
-- System services
-- Error handling
-
-### File System Tests
-
-- FAT operations
-- Directory operations
-- File operations
-- Error recovery
-
-### Application Tests
-
-- Functionality verification
-- Error handling
-- User interface
-- Performance metrics
+- **All test and development output is written to `temp/`**
+  - Object files: `temp/bin/obj/`
+  - Test binaries, images, and logs: `temp/bin/`
+- **Production-ready artifacts are only in `release/`**
 
 ## Running Tests
 
-Each test directory contains its own test runner and test cases. Tests should be run from the root of the project:
+To build and run all tests:
 
-```bash
+```sh
+# Build all tests
+./scripts/tests/build-tests.sh
+
 # Run all tests
-./run_tests.sh
-
-# Run specific test category
-./run_tests.sh core
-./run_tests.sh fs
-./run_tests.sh apps
-
-# Run specific component tests
-./run_tests.sh fs/init
-./run_tests.sh fs/fat
+./scripts/tests/run-tests.sh
 ```
 
-## Test Guidelines
+To build specific test binaries (for example, directory tests):
 
-1. Each test should be self-contained and independent
-2. Tests should clean up after themselves
-3. Error cases should be properly tested
-4. Performance tests should be in separate suites
-5. All tests should be documented
+```sh
+# Build specific test
+./scripts/tests/build-tests.sh fs/dir
 
-## Test Code Conventions
+# Run specific test
+./scripts/tests/run-tests.sh temp/bin/test_dir.elf
 
-- All test assembly files should use `src/lib/constants.inc` for shared constants.
-- Place all `%include` statements at the top of each file, before any use of constants or ORG directives.
+# Run specific test in emulator
+x16emu -f temp/bin/test_dir.bin
+```
+
+## Adding New Tests
+
+- Place new test sources in the appropriate subsystem directory (e.g., `tests/fs/dir/`).
+- Add or update build scripts in `scripts/tests/` as needed.
+- Ensure all temporary outputs go to `temp/`.
+
+## More Information
+
+- See [../ARCHITECTURE.md](../ARCHITECTURE.md) for the full system and artifact flow.
+- See subsystem READMEs for details on test structure and conventions.

@@ -24,7 +24,7 @@ extern dir_delete
 TEST_START
     ; Initialize directory
     call dir_init
-    TEST_CHECK_CARRY
+    TEST_CHECK_CARRY "dir_init failed"
 
     ; Test 1: Fill directory to capacity
     TEST_MESSAGE test_dir_fill_msg, "Test 1: Fill directory to capacity..."
@@ -38,7 +38,7 @@ TEST_START
     push cx
     mov cx, 1234       ; Arbitrary file size
     call dir_create
-    TEST_CHECK_CARRY
+    TEST_CHECK_CARRY "dir_create failed"
     inc byte [si+4]    ; Change filename for each entry (e.g., FILE0, FILE1, ...)
     pop cx
     loop .fill_loop
@@ -52,7 +52,7 @@ TEST_START
     mov cx, 4321
     mov dl, TEST_ATTR_ARCHIVE
     call dir_create
-    TEST_CHECK_NO_CARRY  ; Should set carry flag (error)
+    TEST_CHECK_NO_CARRY "dir_create did not fail as expected on overflow"
 
     ; Test 3: Test file deletion
     TEST_MESSAGE test_dir_delete_msg, "Test 3: Test file deletion..."
@@ -60,9 +60,9 @@ TEST_START
     ; Delete the 3rd file (simulate deletion)
     mov si, test_filename3
     call dir_find
-    TEST_CHECK_CARRY
+    TEST_CHECK_CARRY "dir_find failed"
     call dir_delete
-    TEST_CHECK_CARRY
+    TEST_CHECK_CARRY "dir_delete failed"
 
     ; Test 4: Test file attributes
     TEST_MESSAGE test_dir_attr_msg, "Test 4: Test file attributes..."
@@ -73,22 +73,22 @@ TEST_START
     mov cx, 555
     mov dl, 0x01       ; Read-only
     call dir_create
-    TEST_CHECK_CARRY
+    TEST_CHECK_CARRY "dir_create failed"
     mov dl, 0x02       ; Hidden
     call dir_create
-    TEST_CHECK_CARRY
+    TEST_CHECK_CARRY "dir_create failed"
     mov dl, 0x04       ; System
     call dir_create
-    TEST_CHECK_CARRY
+    TEST_CHECK_CARRY "dir_create failed"
     mov dl, 0x08       ; Volume
     call dir_create
-    TEST_CHECK_CARRY
+    TEST_CHECK_CARRY "dir_create failed"
     mov dl, 0x10       ; Directory
     call dir_create
-    TEST_CHECK_CARRY
+    TEST_CHECK_CARRY "dir_create failed"
     mov dl, 0x20       ; Archive
     call dir_create
-    TEST_CHECK_CARRY
+    TEST_CHECK_CARRY "dir_create failed"
 
     ; Test 5: Test edge cases
     TEST_MESSAGE test_dir_edge_msg, "Test 5: Test edge cases..."
@@ -99,11 +99,10 @@ TEST_START
     mov cx, 0
     mov dl, TEST_ATTR_ARCHIVE
     call dir_create
-    TEST_CHECK_CARRY
+    TEST_CHECK_CARRY "dir_create failed"
     mov bx, 0xFFFF
     mov cx, 0xFFFFFF
     call dir_create
-    TEST_CHECK_CARRY
+    TEST_CHECK_CARRY "dir_create failed"
 
-TEST_ERROR
 TEST_END

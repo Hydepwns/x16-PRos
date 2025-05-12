@@ -6,27 +6,38 @@
 
 section .text
 
+global print_interface
+global print_help
+global print_CPU_info
+global get_date
+global get_time
+global shutdown
+global reboot
+global launch_writer
+global launch_brainf
+global clear_screen
+
 ; Print system interface
 print_interface:
     mov si, header
-    call print_string_white
+    print_string_white
     mov si, info
-    call print_string_green
+    print_string_green
     mov si, menu
-    call print_string_green
+    print_string_green
     ret
 
 ; Print help menu
 print_help:
     mov si, menu
-    call print_string_green
+    print_string_green
     call print_newline
     ret
 
 ; Print CPU information
 print_CPU_info:
     mov si, cpu_info
-    call print_string_cyan
+    print_string_cyan
     ret
 
 ; Get and print current date
@@ -34,7 +45,7 @@ get_date:
     mov ah, BIOS_GET_DATE
     int BIOS_INT
     mov si, date_format
-    call print_string_white
+    print_string_white
     ret
 
 ; Get and print current time
@@ -42,7 +53,7 @@ get_time:
     mov ah, BIOS_GET_TIME
     int BIOS_INT
     mov si, time_format
-    call print_string_white
+    print_string_white
     ret
 
 ; Shutdown system
@@ -68,6 +79,12 @@ launch_writer:
 launch_brainf:
     mov ax, BRAINF_ORG
     jmp ax
+    ret
+
+; Clear screen
+clear_screen:
+    mov ax, 0x03      ; BIOS: Set 80x25 text mode (clears screen)
+    int 0x10
     ret
 
 section .data

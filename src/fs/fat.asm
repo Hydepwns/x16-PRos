@@ -6,6 +6,7 @@
 ; Include error handling
 %include "src/lib/constants.inc"
 %include "src/lib/error_codes.inc"
+%include "src/fs/fat/check.asm"
 
 ; External error handling functions
 extern set_error
@@ -37,6 +38,12 @@ FAT_EOF         equ 0xFF8     ; End of file marker
 
 ; FAT Operations
 section .text
+global fat_next
+global fat_alloc
+global fat_free
+global fat_get_next
+global fat_set_next
+global fat_is_valid
 
 ; Initialize FAT
 ; Input: None
@@ -376,5 +383,111 @@ fat_mark_bad:
     pop bx
     pop ax
     ret 
+
+; Get next cluster in chain (alias for fat_next)
+; Input: AX = current cluster number
+; Output: AX = next cluster number (0xFFF if end of chain), CF=1 if error
+fat_get_next:
+    jmp fat_next
+
+; Set next cluster in chain
+; Input: AX = current cluster number, DX = next cluster number (12 bits)
+; Output: CF = 0 if successful, CF = 1 if error
+fat_set_next:
+    push ax
+    push bx
+    push dx
+    push es
+
+    cmp ax, MAX_CLUSTERS
+    jae .invalid_cluster
+    cmp dx, 0x0FFF
+    ja .invalid_value
+
+    ; Calculate FAT offset
+    mov bx, ax
+    mov cl, 2
+    mul cl          ; Multiply by 2 to get byte offset
+    mov bx, ax
+
+    mov ax, FAT_BUFFER
+    mov es, ax
+    mov ax, [es:bx]
+    test bx, 1
+    jz .even_entry
+    ; Odd entry: upper 12 bits
+    and ax, 0x000F
+    mov cx, dx
+    shl cx, 4
+    or ax, cx
+    mov [es:bx], ax
+    jmp .write_disk
+.even_entry:
+    ; Even entry: lower 12 bits
+    and ax, 0xF000
+    or ax, dx
+    mov [es:bx], ax
+.write_disk:
+    ; Write FAT back to disk
+    mov ax, FAT_BUFFER
+    mov es, ax
+    xor bx, bx
+    mov ah, 0x03    ; BIOS write sector
+    mov al, FAT_SECTORS
+    mov ch, 0x00
+    mov cl, FAT_START_SECTOR
+    mov dh, 0x00
+    mov dl, DISK_FIRST_HD
+    int BIOS_DISK_INT
+    jc .disk_error
+    mov al, ERR_NONE
+    call set_error
+    clc
+    jmp .done
+.invalid_cluster:
+    mov al, ERR_INVALID_CLUST
+    call set_error
+    stc
+    jmp .done
+.invalid_value:
+    mov al, ERR_INVALID_CLUST
+    call set_error
+    stc
+    jmp .done
+.disk_error:
+    mov al, ERR_DISK_WRITE
+    call set_error
+    stc
+.done:
+    pop es
+    pop dx
+    pop bx
+    pop ax
+    ret
+
+; Check if a cluster number is valid (not reserved/bad)
+; Input: AX = cluster number
+; Output: ZF=1 if valid, ZF=0 if not valid, CF=1 if error
+fat_is_valid:
+    push ax
+    cmp ax, 2
+    jb .invalid
+    cmp ax, MAX_CLUSTERS
+    jae .invalid
+    ; Check for reserved/bad
+    cmp ax, FAT_RESERVED
+    je .invalid
+    cmp ax, FAT_BAD
+    je .invalid
+    ; Valid
+    pop ax
+    clc
+    xor ax, ax ; ZF=1
+    ret
+.invalid:
+    pop ax
+    stc
+    mov ax, 1 ; ZF=0
+    ret
 
 %endif ; FAT_INCLUDED 

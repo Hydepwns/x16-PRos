@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Source shared build utilities
+source "$(dirname "$0")/../utils/build_common.sh"
+
 # Colors for output
 GREEN='\033[32m'
 RED='\033[31m'
@@ -52,7 +55,8 @@ check_dir_writable() {
 validate_binary_size() {
     local file=$1
     local expected=$2
-    local actual=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null)
+    local actual
+    actual=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null)
     
     if [ "$actual" -ne "$expected" ]; then
         echo -e "${RED}Error: Invalid binary size for '$file'${NC}"
@@ -214,7 +218,7 @@ check_command qemu-system-i386
 # Check source files
 echo -e "${GREEN}Checking source files...${NC}"
 check_file "src/core/boot.asm"
-# check_file "src/fs/fat.asm"  # Aggregator module, not built directly
+check_file "src/fs/fat.asm"
 check_file "src/fs/file.asm"
 check_file "src/fs/errors.asm"
 check_file "src/fs/recovery.asm"
@@ -226,7 +230,7 @@ check_file "tests/fs/init/test_fs_init.asm"
 # Check sector size compatibility
 echo -e "${GREEN}Checking sector size compatibility...${NC}"
 check_sector_size_compatibility "$SECTOR_SIZE" "src/core/boot.asm"
-# check_sector_size_compatibility "$SECTOR_SIZE" "src/fs/fat.asm"  # Aggregator module, not built directly
+check_sector_size_compatibility "$SECTOR_SIZE" "src/fs/fat.asm"
 check_sector_size_compatibility "$SECTOR_SIZE" "src/fs/file.asm"
 check_sector_size_compatibility "$SECTOR_SIZE" "src/fs/errors.asm"
 check_sector_size_compatibility "$SECTOR_SIZE" "src/fs/recovery.asm"
@@ -235,113 +239,130 @@ check_sector_size_compatibility "$SECTOR_SIZE" "tests/fs/fat/test_fat.asm"
 check_sector_size_compatibility "$SECTOR_SIZE" "tests/fs/file/test_file.asm"
 check_sector_size_compatibility "$SECTOR_SIZE" "tests/fs/init/test_fs_init.asm"
 
-# Create necessary directories
+# Set output directories based on build mode
+if [ "$BUILD_MODE" = "test" ]; then
+    OUTDIR="temp/"
+    IMGDIR="temp/"
+else
+    OUTDIR="release/"
+    IMGDIR="release/"
+fi
+
 echo -e "${GREEN}Creating directories...${NC}"
-mkdir -p bin
-check_error "Failed to create bin directory"
-mkdir -p disk_img
-check_error "Failed to create disk_img directory"
+mkdir -p "$OUTDIR"
+check_error "Failed to create $OUTDIR directory"
+mkdir -p "$IMGDIR"
+check_error "Failed to create $IMGDIR directory"
 
 # Check directory permissions
-check_dir_writable "bin"
-check_dir_writable "disk_img"
+check_dir_writable "$OUTDIR"
+check_dir_writable "$IMGDIR"
 
 echo -e "${GREEN}Building x16FS-Lite...${NC}"
 echo -e "${GREEN}Disk size: $((DISK_SECTORS * SECTOR_SIZE)) bytes ($DISK_SECTORS sectors)${NC}"
 echo -e "${GREEN}Sector size: $SECTOR_SIZE bytes${NC}"
 
+# Set build mode to release (default for this script)
+set_build_mode release
+
+echo -e "${GREEN}Build mode: $BUILD_MODE${NC}"
+
 # Assemble boot sector
 echo -e "${GREEN}Assembling boot sector...${NC}"
-nasm -f bin src/core/boot.asm -o bin/boot.bin
+nasm -f bin src/core/boot.asm -o "$OUTDIR/boot.bin"
 check_error "Failed to assemble boot sector"
-validate_binary_size "bin/boot.bin" "$SECTOR_SIZE"
+validate_binary_size "$OUTDIR/boot.bin" "$SECTOR_SIZE"
 
 # Assemble FAT implementation
-# echo -e "${GREEN}Assembling FAT implementation...${NC}"
-# nasm -f bin src/fs/fat.asm -o bin/fat.bin
-# check_error "Failed to assemble FAT implementation"
-# validate_binary_size "bin/fat.bin" 762  # FAT12 implementation size
+echo -e "${GREEN}Assembling FAT implementation...${NC}"
+nasm -f bin src/fs/fat.asm -o "$OUTDIR/fat.bin"
+check_error "Failed to assemble FAT implementation"
+validate_binary_size "$OUTDIR/fat.bin" 762  # FAT12 implementation size
 
 # Assemble file operations
 echo -e "${GREEN}Assembling file operations...${NC}"
-nasm -f bin src/fs/file.asm -o bin/file.bin
+nasm -f bin src/fs/file.asm -o "$OUTDIR/file.bin"
 check_error "Failed to assemble file operations"
 
 # Assemble error handling
 echo -e "${GREEN}Assembling error handling...${NC}"
-nasm -f bin src/fs/errors.asm -o bin/errors.bin
+nasm -f bin src/fs/errors.asm -o "$OUTDIR/errors.bin"
 check_error "Failed to assemble error handling"
 
 # Assemble recovery mechanisms
 echo -e "${GREEN}Assembling recovery mechanisms...${NC}"
-nasm -f bin src/fs/recovery.asm -o bin/recovery.bin
+nasm -f bin src/fs/recovery.asm -o "$OUTDIR/recovery.bin"
 check_error "Failed to assemble recovery mechanisms"
 
-# Assemble test programs
-echo -e "${GREEN}Assembling test programs...${NC}"
-nasm -f bin tests/fs/dir/test_dir.asm -o bin/test_dir.bin
-check_error "Failed to assemble directory test program"
-nasm -f bin tests/fs/fat/test_fat.asm -o bin/test_fat.bin
-check_error "Failed to assemble FAT test program"
-nasm -f bin tests/fs/file/test_file.asm -o bin/test_file.bin
-check_error "Failed to assemble file test program"
-nasm -f bin tests/fs/init/test_fs_init.asm -o bin/test_fs_init.bin
-check_error "Failed to assemble filesystem initialization test program"
+# Assemble test programs only in test mode
+if [ "$BUILD_MODE" = "test" ]; then
+    echo -e "${GREEN}Assembling test programs...${NC}"
+    nasm -f bin tests/fs/dir/test_dir.asm -o "$OUTDIR/test_dir.bin"
+    check_error "Failed to assemble directory test program"
+    nasm -f bin tests/fs/fat/test_fat.asm -o "$OUTDIR/test_fat.bin"
+    check_error "Failed to assemble FAT test program"
+    nasm -f bin tests/fs/file/test_file.asm -o "$OUTDIR/test_file.bin"
+    check_error "Failed to assemble file test program"
+    nasm -f bin tests/fs/init/test_fs_init.asm -o "$OUTDIR/test_fs_init.bin"
+    check_error "Failed to assemble filesystem initialization test program"
+fi
 
 # Create disk image
 echo -e "${GREEN}Creating disk image...${NC}"
-dd if=/dev/zero of=disk_img/x16fs.img bs="$SECTOR_SIZE" count="$DISK_SECTORS" 2>/dev/null
+dd if=/dev/zero of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" count="$DISK_SECTORS" 2>/dev/null
 check_error "Failed to create disk image"
 
 # Verify disk image size
-validate_binary_size "disk_img/x16fs.img" $((DISK_SECTORS * SECTOR_SIZE))
+validate_binary_size "$IMGDIR/x16fs.img" $((DISK_SECTORS * SECTOR_SIZE))
 
 # Write components to disk image
 echo -e "${GREEN}Writing components to disk image...${NC}"
 
 # Boot sector at sector 0
-dd if=bin/boot.bin of=disk_img/x16fs.img conv=notrunc 2>/dev/null
+dd if="$OUTDIR/boot.bin" of="$IMGDIR/x16fs.img" conv=notrunc 2>/dev/null
 check_error "Failed to write boot sector"
 
-# Test programs at sector 1 (4 sectors)
-dd if=bin/test_dir.bin of=disk_img/x16fs.img bs="$SECTOR_SIZE" seek=1 conv=notrunc 2>/dev/null
-check_error "Failed to write directory test program"
-dd if=bin/test_fat.bin of=disk_img/x16fs.img bs="$SECTOR_SIZE" seek=2 conv=notrunc 2>/dev/null
-check_error "Failed to write FAT test program"
-dd if=bin/test_file.bin of=disk_img/x16fs.img bs="$SECTOR_SIZE" seek=3 conv=notrunc 2>/dev/null
-check_error "Failed to write file test program"
-dd if=bin/test_fs_init.bin of=disk_img/x16fs.img bs="$SECTOR_SIZE" seek=4 conv=notrunc 2>/dev/null
-check_error "Failed to write filesystem initialization test program"
+# Test programs at sector 1 (4 sectors, in test mode)
+if [ "$BUILD_MODE" = "test" ]; then
+    dd if="$OUTDIR/test_dir.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=1 conv=notrunc 2>/dev/null
+    check_error "Failed to write directory test program"
+    dd if="$OUTDIR/test_fat.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=2 conv=notrunc 2>/dev/null
+    check_error "Failed to write FAT test program"
+    dd if="$OUTDIR/test_file.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=3 conv=notrunc 2>/dev/null
+    check_error "Failed to write file test program"
+    dd if="$OUTDIR/test_fs_init.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=4 conv=notrunc 2>/dev/null
+    check_error "Failed to write filesystem initialization test program"
+fi
 
 # FAT at sector 5 (4 sectors)
-# dd if=bin/fat.bin of=disk_img/x16fs.img bs="$SECTOR_SIZE" seek=5 conv=notrunc 2>/dev/null
-# check_error "Failed to write FAT"
+dd if="$OUTDIR/fat.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=5 conv=notrunc 2>/dev/null
+check_error "Failed to write FAT"
 
 # Directory at sector 9 (4 sectors)
-# dd if=bin/dir.bin of=disk_img/x16fs.img bs="$SECTOR_SIZE" seek=9 conv=notrunc 2>/dev/null
-# check_error "Failed to write directory"
+dd if="$OUTDIR/dir.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=9 conv=notrunc 2>/dev/null
+check_error "Failed to write directory"
 
 # File operations at sector 13
-dd if=bin/file.bin of=disk_img/x16fs.img bs="$SECTOR_SIZE" seek=13 conv=notrunc 2>/dev/null
+dd if="$OUTDIR/file.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=13 conv=notrunc 2>/dev/null
 check_error "Failed to write file operations"
 
 # Error handling at sector 14
-dd if=bin/errors.bin of=disk_img/x16fs.img bs="$SECTOR_SIZE" seek=14 conv=notrunc 2>/dev/null
+dd if="$OUTDIR/errors.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=14 conv=notrunc 2>/dev/null
 check_error "Failed to write error handling"
 
 # Recovery mechanisms at sector 15
-dd if=bin/recovery.bin of=disk_img/x16fs.img bs="$SECTOR_SIZE" seek=15 conv=notrunc 2>/dev/null
+dd if="$OUTDIR/recovery.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=15 conv=notrunc 2>/dev/null
 check_error "Failed to write recovery mechanisms"
 
 # Verify disk image integrity
 echo -e "${GREEN}Verifying disk image integrity...${NC}"
-if ! dd if=disk_img/x16fs.img bs="$SECTOR_SIZE" count=1 2>/dev/null | grep -q "FS"; then
+if ! dd if="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" count=1 2>/dev/null | grep -q "FS"; then
     echo -e "${RED}Error: Invalid boot sector signature${NC}"
     exit 1
 fi
 
 echo -e "${GREEN}Build completed successfully!${NC}"
-echo -e "${GREEN}Disk image created at: disk_img/x16fs.img${NC}"
+echo -e "${GREEN}Disk image created at: $IMGDIR/x16fs.img${NC}"
 echo -e "${GREEN}Disk size: $((DISK_SECTORS * SECTOR_SIZE)) bytes ($DISK_SECTORS sectors)${NC}"
 echo -e "${GREEN}Sector size: $SECTOR_SIZE bytes${NC}"
 
@@ -351,5 +372,5 @@ echo
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
     echo -e "${GREEN}Launching QEMU...${NC}"
-    qemu-system-i386 -hda disk_img/x16fs.img -m 128M -serial stdio
+    qemu-system-i386 -hda "$IMGDIR/x16fs.img" -m 128M -serial stdio
 fi 

@@ -13,6 +13,9 @@ BIOS_KEYBOARD_INT     equ 0x16
 BIOS_DISK_INT         equ 0x13
 BIOS_TIME_INT         equ 0x1A
 BIOS_WAIT_INT         equ 0x15
+BIOS_INT              equ 0x1A   ; Standard BIOS time/date interrupt
+BIOS_GET_DATE         equ 0x04   ; Function: Get Date (INT 1Ah, AH=04h)
+BIOS_GET_TIME         equ 0x02   ; Function: Get Time (INT 1Ah, AH=02h)
 
 ; =============================================
 ; Video Mode Constants
@@ -275,5 +278,6 @@ BRAINF_ORG          equ 0x800   ; Brainfuck program origin
 WRITE_ORG           equ 0x800   ; Write program origin
 SNAKE_ORG           equ 0x800   ; Snake program origin
 CALC_ORG            equ 0x800   ; Calculator program origin
+WRITER_ORG          equ 0x800   ; Alias for text editor origin
 
 %endif ; CONSTANTS_INCLUDED

@@ -318,3 +318,9 @@ display_error:
     pop bx
     pop ax
     ret 
+
+global print_string
+global print_char
+global print_hex
+global print_newline
+global print_space

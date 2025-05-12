@@ -8,8 +8,10 @@
   - Boot sector with signature and configuration
   - FAT with 12-bit cluster management
   - Root directory with 32-byte entries
-  - Error handling system with centralized error codes
-  - Recovery mechanisms for disk operations
+  - Added error handling system featuring:
+    - Centralized error codes
+    - Standardized error reporting
+  - Added recovery mechanisms for disk operations, including error recovery procedures.
 - Memory Layout
   - Defined map (0x7C00-0xBFFF)
   - Boot sector region
@@ -29,60 +31,61 @@
   - File read and write
   - Directory listing and info
   - Error reporting and recovery
-- Initial Project Structure
-  - Core system components
-  - File system implementation
-  - Basic applications
-  - Common utilities library
 - Test Suite Organization
-  - Modular test structure in tests/fs/
-  - Directory-specific tests in tests/fs/dir/
-  - FAT tests in tests/fs/fat/
-  - File operation tests in tests/fs/file/
-  - File system initialization tests in tests/fs/init/
-  - Removed monolithic test.asm
+  - Modular test structure in `tests/fs/`
+  - Directory-specific tests in `tests/fs/dir/`
+  - FAT tests in `tests/fs/fat/`
+  - File operation tests in `tests/fs/file/`
+  - File system initialization tests in `tests/fs/init/`
+  - Removed monolithic `test.asm`
   - Updated include conventions
-  - Enhanced test maintainability
 - Test Framework
-  - Added standardized test structure macros
-  - Implemented common test patterns
-  - Added shared test data and constants
-  - Enhanced error handling consistency
-  - Improved test message formatting
-  - Added test result reporting
-  - Standardized buffer segments
-  - Added common attribute definitions
+  - Added a new test framework including:
+    - Standardized test structure macros
+    - Common test patterns
+    - Shared test data and constants
+    - Test result reporting capabilities
+    - Standardized buffer segments
+    - Common attribute definitions
+    - Mechanisms for consistent error handling and message formatting in tests.
 - Build System Improvements
-  - Reorganized build scripts into scripts/build directory
-  - Added cross-compilation support for macOS
-  - Added predefined disk formats (floppy360, floppy720, floppy144, floppy288, hdd)
-  - Added verbose build mode
-  - Added test integration
-  - Added build artifact cleaning
-  - Added sector size validation
-  - Added disk format validation
-  - Enhanced error reporting
-  - Added detailed build documentation
-  - Added x86_64-elf toolchain support for macOS
-  - Added platform-specific build configurations
-  - Added build configuration validation
-  - Added comprehensive error handling for build process
-  - Added build artifact management
-  - Added cross-platform compatibility checks
+  - Reorganized build scripts into `scripts/build` directory.
+  - Added cross-compilation support for macOS, utilizing the x86_64-elf toolchain.
+  - Introduced predefined disk formats (floppy360, floppy720, floppy144, floppy288, hdd).
+  - Added verbose build mode.
+  - Integrated test execution into the build process.
+  - Implemented build artifact cleaning and management.
+  - Added validation for sector size, disk format, and build configuration.
+  - Enhanced error reporting and comprehensive error handling for the build process.
+  - Added detailed build documentation.
+  - Added platform-specific build configurations.
+  - Added cross-platform compatibility checks.
+- NASM Modular Assembly Compatibility Guidelines
+  - Documented best practices for making NASM code compatible with both flat binary and ELF object file outputs.
+  - Included instructions for conditional `ORG` directive, unique macro labels, avoiding duplicate global labels, and proper function exporting for linking.
+  - Provided troubleshooting checklist and example code for modular assembly development.
 
 ### Changed
 
 - Project Organization
-  - Created dedicated directories for core, fs, apps, and lib
-  - Moved common utilities to top-level lib directory
-  - Consolidated boot sector implementation
-  - Organized test suite to match source structure
-  - Moved test files to dedicated tests directory
-  - Updated build script for new structure
-- Enhanced error handling
-  - Centralized error codes
-  - Standardized error reporting
-  - Added error recovery procedures
+  - Moved test files to dedicated `tests` directory.
+  - Updated build scripts for the new project structure and to integrate new build system features.
+  - Updated build process documentation to reflect new structure and features.
+  - Refactored `scripts/build/build-linux.sh`:
+    - File system components (`io.asm`, `errors.asm`, `fat.asm`, `file.asm`, `recovery.asm`) now compile to ELF32 objects.
+    - ELF objects are linked into a single `fs.bin`.
+    - `fs.bin` is written to the disk image, with kernel and application sector offsets adjusted.
+    - Toolchain check for `x86_64-elf-ld` added.
+    - Creates `bin/obj` directory for intermediate object files.
+    - Standardized disk image size to 1.44MB.
+  - Refactored `scripts/build/build-windows.bat`:
+    - Adopted ELF32 object and linking model for file system components, similar to Linux/macOS.
+    - Added check for `ld.exe` (ELF linker).
+    - File system objects are linked into `fs.bin` and written to the disk image.
+    - Kernel and application sector offsets adjusted.
+    - Standardized disk image size to 1.44MB.
+    - Aligned application binary inclusion (`snake.asm`, `calc.asm`) with `build-linux.sh`.
+    - Creates `bin\obj` directory for intermediate object files.
 - Directory Entry Structure
   - Updated to 32-byte entries for better field alignment
   - Improved date and time field handling (2 bytes each)
@@ -95,52 +98,47 @@
   - Added proper field initialization
   - Enhanced directory listing display
   - Added human-readable date/time formatting
-- Improved build system
-  - Added sector size validation
-  - Enhanced disk image creation
-  - Added component verification
-  - Added cross-platform support
-  - Added build configuration options
-  - Improved build documentation
-  - Updated build scripts for modern macOS compatibility
-  - Switched to x86_64-elf toolchain for macOS builds
-  - Enhanced build script error handling
-  - Improved build artifact management
-  - Updated build process documentation
 - Test Suite Refactoring
-  - Standardized test structure across all test files
-  - Implemented common test patterns and macros
-  - Enhanced test message consistency
-  - Improved error handling standardization
-  - Added shared test data and constants
-  - Updated test runner for framework support
-  - Enhanced test maintainability
-  - Improved test documentation
-- Refactored src/fs/dir.asm to be a pure aggregator, removing duplicate implementations and resolving label redefinition errors.
-- Cleaned up src/lib/constants.inc to ensure proper formatting and remove any stray characters causing assembler errors.
+  - Migrated existing tests to the new framework, standardizing structure and patterns.
+  - Updated test runner for framework support.
+  - Enhanced overall test maintainability.
+  - Improved test documentation.
+- Refactored `src/fs/dir.asm` to be a pure aggregator, removing duplicate implementations and resolving label redefinition errors.
+- Cleaned up `src/lib/constants.inc` to ensure proper formatting and remove any stray characters causing assembler errors.
 - Linter script improvements:
   - Excludes itself from aggregator checks to prevent false positives.
   - Only matches actual build commands for aggregator detection.
   - Uses portable, robust method for removing global directives from helper functions (awk+while-read loop).
   - Handles all filenames safely (null-delimited find+while-read).
+- Documentation Refactor
+  - Major cleanup and deduplication of `ARCHITECTURE.md`
+  - Removed duplicate headings and merged unique content under single headings
+  - Applied DRY principles throughout documentation
+  - Improved section referencing and canonicalization
+  - Ensured markdown linter compliance (no duplicate headings, consistent spacing)
+- **Documentation & Build System**
+  - Streamlined the root `README.md` to be concise and focused on features, usage, and high-level build info. All detailed build, test, and troubleshooting instructions are now in `scripts/README.md`.
+  - Major expansion of `scripts/README.md` to serve as the canonical reference for all build and test scripts, including quick start, platform-specific instructions, disk image layout, troubleshooting, and extension guidelines.
+  - Unified and clarified modular build scripts for macOS, Linux, and Windows: all core modules are now built as ELF objects and linked into a single kernel binary; only the boot sector and apps are built as flat binaries.
+  - Updated documentation to consistently refer to the new modular build process and script locations.
 
 ### Fixed
 
-- Removed stray {}.tmp file from project root and improved linter script to prevent its creation.
-- Resolved NASM macro/constant conflict by changing SECTOR_SIZE from equ to %define in src/lib/constants.inc, ensuring compatibility with macro logic in all modules and fixing test build errors.
-- Fixed build system compatibility issues on modern macOS by switching to x86_64-elf toolchain
-- Resolved symbol redefinition errors in test suite
-- Fixed build script error handling and validation
-- Corrected build artifact management and cleanup
-- Fixed cross-platform compatibility issues in build scripts
-- Fixed directory entry field offsets and validation
-- Corrected file size handling in directory entries
-- Fixed date and time field handling
-- Improved directory listing format and readability
-- Fixed test framework integration issues
-- Corrected test message formatting
-- Fixed test buffer segment conflicts
-- Resolved test attribute definition issues
+- Removed stray `{}.tmp` file from project root and improved linter script to prevent its creation.
+- Resolved NASM macro/constant conflict by changing `SECTOR_SIZE` from `equ` to `%define` in `src/lib/constants.inc`, ensuring compatibility with macro logic in all modules and fixing test build errors.
+- Fixed build system compatibility issues on modern macOS by switching to x86_64-elf toolchain.
+- Resolved symbol redefinition errors in test suite.
+- Fixed build script error handling and validation.
+- Corrected build artifact management and cleanup.
+- Fixed cross-platform compatibility issues in build scripts.
+- Fixed directory entry field offsets and validation.
+- Corrected file size handling in directory entries.
+- Fixed date and time field handling.
+- Improved directory listing format and readability.
+- Fixed test framework integration issues.
+- Corrected test message formatting.
+- Fixed test buffer segment conflicts.
+- Resolved test attribute definition issues.
 
 ### Future Plans {loose proposals by Hydepwns, would love to be discuss}
 
@@ -160,11 +158,9 @@
   - Add performance benchmarks
   - Implement stress testing
   - Add edge case coverage
-  - Improve test documentation
-  - Add test result reporting
   - Implement test coverage tracking
   - Add automated test execution
-  - Enhance test framework capabilities
+  - Enhance test framework capabilities (e.g., for advanced scenarios)
 
 #### P2: Essential
 
@@ -249,10 +245,9 @@
   - Add performance benchmarks
   - Add regression testing
 - Documentation
-  - Add build system documentation
   - Create troubleshooting guide
   - Add platform-specific guides
-  - Add API documentation
+  - Add API documentation for build system components.
 - Cross-Platform Support
   - Enhance macOS compatibility
   - Improve Windows support

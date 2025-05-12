@@ -1,4 +1,4 @@
-# Secrets secrets are no fun, but they're fun to keep iron-ically
+# Secrets secrets are no fun; but they're fun to keep iron-ically
 iron-keep/*
 
 # Build files (you can comment this out if you want)
@@ -11,3 +11,12 @@ iron-keep/*
 # Temporary files
 *.tmp
 *.bak
+
+temp/*
+!temp/.gitkeep
+!temp/bin/obj/.gitkeep
+!temp/img/.gitkeep
+!temp/iso/.gitkeep
+!temp/vdi/.gitkeep
+!temp/vmdk/.gitkeep
+!temp/log/.gitkeep

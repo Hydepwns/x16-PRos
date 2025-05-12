@@ -12,12 +12,14 @@ extern set_error
 extern get_error
 extern print_error
 extern print_string
-
-; Include FAT operations
-%include "src/fs/fat.asm"
+; extern fat_validate_chain  ; Commented out to avoid redefinition error in flat binary mode
+extern fat_next
 
 ; Include directory operations
 %include "src/fs/dir.asm"
+
+; Include FAT operations
+%include "src/fs/fat.inc"
 
 ; Recovery Constants
 MAX_RETRIES     equ 3         ; Maximum number of retries for operations

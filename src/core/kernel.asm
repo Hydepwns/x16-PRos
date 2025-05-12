@@ -3,7 +3,6 @@
 %include "src/lib/utils.inc"
 
 [BITS 16]
-[ORG KERNEL_ORG]
 
 ; External symbols from shell module
 extern shell_init
@@ -52,7 +51,10 @@ extern process_schedule
 
 section .text
 
-start:
+; Constants
+KERNEL_ORG equ 0x0500
+
+kernel_start:
     ; Initialize segments
     mov ax, 0x07C0
     mov ds, ax
@@ -209,29 +211,9 @@ check_error:
 section .data
 error_code db 0
 
-; Constants
-KERNEL_ORG equ 0x0500
-
 section .text
 
-start:
-    ; Initialize segments
-    mov ax, 0x07C0
-    mov ds, ax
-    mov es, ax
-    mov ss, ax
-    mov sp, 0x7C00
-
-    ; Initialize video mode
-    mov ax, 0x0003  ; 80x25 text mode
-    int BIOS_VIDEO_INT
-
-    ; Initialize shell
-    call shell_init
-    call shell_run
-
-    ; If we get here, something went wrong
-    jmp $
+; Removed duplicate kernel_start definition and its code
 
 ; Set video mode
 set_video_mode:
@@ -259,22 +241,27 @@ set_background_color:
 
 print_interface:
     mov si, header
-    call print_string_white
+    mov bl, 0x0F
+    call print_string
     mov si, info
-    call print_string_green
+    mov bl, 0x0A
+    call print_string
     mov si, menu
-    call print_string_green
+    mov bl, 0x0A
+    call print_string
     ret
 
 print_help:
     mov si, menu
-    call print_string_green
+    mov bl, 0x0A
+    call print_string
     call print_newline
     ret
 
 shell:
     mov si, prompt
-    call print_string_white
+    mov bl, 0x0F
+    call print_string
     call read_command
     call print_command_buffer
     call print_newline
@@ -293,12 +280,12 @@ read_command:
     
     ; Echo character in default color
     mov ah, 0x0E
-    mov bl, COLOR_WHITE        ; White color
+    mov bl, 0x0F        ; White color
     int BIOS_VIDEO_INT
     
     ; Debug: print key in cyan
     mov ah, 0x0E
-    mov bl, COLOR_LIGHT_CYAN        ; Cyan color
+    mov bl, 0x0B        ; Cyan color
     int BIOS_VIDEO_INT
     
     mov al, ah          ; Restore character from AH
@@ -329,7 +316,7 @@ read_command:
     
     ; Move cursor back
     mov ah, 0x0E
-    mov bl, COLOR_WHITE        ; White color
+    mov bl, 0x0F        ; White color
     mov al, CHAR_BACKSPACE        ; Backspace
     int BIOS_VIDEO_INT
     mov al, CHAR_SPACE         ; Space
@@ -483,7 +470,8 @@ do_cls:
 
 unknown_command:
     mov si, unknown_msg
-    call print_string_red
+    mov bl, 0x0C
+    call print_string
     call print_newline
     ret
 
@@ -500,7 +488,8 @@ do_reboot:
     
 print_OS_info:
     mov si, info
-    call print_string_green
+    mov bl, 0x0A
+    call print_string
     call print_newline
     ret
        
@@ -509,17 +498,18 @@ print_OS_info:
 start_writer:
     pusha
     mov ah, 0x02
-    mov al, 2       ; Количество секторов для чтения
-    mov ch, 0       ; Номер дорожки
-    mov dh, 0       ; Номер головки
-    mov cl, 9       ; Номер сектора
-    mov bx, 800h    ; Адрес загрузки
+    mov al, 2
+    mov ch, 0
+    mov dh, 0
+    mov cl, 9
+    mov bx, 800h
     int 0x13
-    jc .disk_error  ; Если ошибка, перейти к обработке
-    jmp 800h        ; Переход к загруженной программе
+    jc .disk_error
+    jmp 800h
 .disk_error:
     mov si, disk_error_msg
-    call print_string_red
+    mov bl, 0x0C
+    call print_string
     call print_newline
     popa
     ret
@@ -527,17 +517,18 @@ start_writer:
 start_brainf:
     pusha
     mov ah, 0x02
-    mov al, 2       ; Количество секторов для чтения
-    mov ch, 0       ; Номер дорожки
-    mov dh, 0       ; Номер головки
-    mov cl, 12       ; Номер сектора
-    mov bx, 800h    ; Адрес загрузки
+    mov al, 2
+    mov ch, 0
+    mov dh, 0
+    mov cl, 12
+    mov bx, 800h
     int 0x13
-    jc .disk_error  ; Если ошибка, перейти к обработке
-    jmp 800h        ; Переход к загруженной программе
+    jc .disk_error
+    jmp 800h
 .disk_error:
     mov si, disk_error_msg
-    call print_string_red
+    mov bl, 0x0C
+    call print_string
     call print_newline
     popa
     ret
@@ -545,17 +536,18 @@ start_brainf:
 start_barchart:
     pusha
     mov ah, 0x02
-    mov al, 1       ; Количество секторов для чтения
-    mov ch, 0       ; Номер дорожки
-    mov dh, 0       ; Номер головки
-    mov cl, 15       ; Номер сектора
-    mov bx, 800h    ; Адрес загрузки
+    mov al, 1
+    mov ch, 0
+    mov dh, 0
+    mov cl, 15
+    mov bx, 800h
     int 0x13
-    jc .disk_error  ; Если ошибка, перейти к обработке
-    jmp 800h        ; Переход к загруженной программе
+    jc .disk_error
+    jmp 800h
 .disk_error:
     mov si, disk_error_msg
-    call print_string_red
+    mov bl, 0x0C
+    call print_string
     call print_newline
     popa
     ret
@@ -563,17 +555,18 @@ start_barchart:
 start_snake:
     pusha
     mov ah, 0x02
-    mov al, 2       ; Количество секторов для чтения
-    mov ch, 0       ; Номер дорожки
-    mov dh, 0       ; Номер головки
-    mov cl, 16       ; Номер сектора
-    mov bx, 800h    ; Адрес загрузки
+    mov al, 2
+    mov ch, 0
+    mov dh, 0
+    mov cl, 16
+    mov bx, 800h
     int 0x13
-    jc .disk_error  ; Если ошибка, перейти к обработке
-    jmp 800h        ; Переход к загруженной программе
+    jc .disk_error
+    jmp 800h
 .disk_error:
     mov si, disk_error_msg
-    call print_string_red
+    mov bl, 0x0C
+    call print_string
     call print_newline
     popa
     ret
@@ -581,17 +574,18 @@ start_snake:
 start_calc:
     pusha
     mov ah, 0x02
-    mov al, 2       ; Количество секторов для чтения
-    mov ch, 0       ; Номер дорожки
-    mov dh, 0       ; Номер головки
-    mov cl, 18      ; Номер сектора
-    mov bx, 800h    ; Адрес загрузки
+    mov al, 2
+    mov ch, 0
+    mov dh, 0
+    mov cl, 18
+    mov bx, 800h
     int 0x13
-    jc .disk_error  ; Если ошибка, перейти к обработке
-    jmp 800h        ; Переход к загруженной программе
+    jc .disk_error
+    jmp 800h
 .disk_error:
     mov si, disk_error_msg
-    call print_string_red
+    mov bl, 0x0C
+    call print_string
     call print_newline
     popa
     ret
@@ -631,6 +625,7 @@ loop4n:
 
 print_cores:
     mov si, cores
+    mov bl, 0x0F
     call print_string
     mov eax, 1
     cpuid
@@ -641,6 +636,7 @@ print_cores:
 
 print_cache_line:
     mov si, cache_line
+    mov bl, 0x0F
     call print_string
     mov eax, 1
     cpuid
@@ -653,6 +649,7 @@ print_cache_line:
 
 print_stepping:
     mov si, stepping
+    mov bl, 0x0F
     call print_string
     mov eax, 1
     cpuid
@@ -682,6 +679,7 @@ skip_fn:
 do_CPUinfo:
     pusha
     mov si, cpu_name
+    mov bl, 0x0F
     call print_string
     ; Выводим информацию о ЦПУ
     mov eax, 80000002h
@@ -691,6 +689,7 @@ do_CPUinfo:
     mov eax, 80000004h
     call print_full_name_part
     mov si, mt
+    mov bl, 0x0F
     call print_string
     call print_cores
     mov si, mt
@@ -727,6 +726,7 @@ info db 10, 13
 ; Выводит дату в формате DD.MM.YY
 print_date:
     mov si, date_msg
+    mov bl, 0x0F
     call print_string
     
     pusha
@@ -740,7 +740,7 @@ print_date:
     mov al, dl
     shr al, 4
     add al, '0'  ; Преобразовать в ASCII
-    mov bl, 0x0B
+    mov bl, 0x0F
     int 0x10     ; Выводим
     mov al, dl
     and al, 0x0F
@@ -749,39 +749,40 @@ print_date:
 
     ; Вывести точку
     mov al, '.'
-    mov bl, 0x0B
+    mov bl, 0x0F
     int 0x10
 
     ; Вывести месяц (dh)
     mov al, dh
     shr al, 4
     add al, '0'
-    mov bl, 0x0B
+    mov bl, 0x0F
     int 0x10
     mov al, dh
     and al, 0x0F
     add al, '0'
-    mov bl, 0x0B
+    mov bl, 0x0F
     int 0x10
 
     ; Вывести точку
     mov al, '.'
-    mov bl, 0x0B
+    mov bl, 0x0F
     int 0x10
 
     ; Вывести год (cl)
     mov al, cl
     shr al, 4
     add al, '0'
-    mov bl, 0x0B
+    mov bl, 0x0F
     int 0x10
     mov al, cl
     and al, 0x0F
     add al, '0'
-    mov bl, 0x0B
+    mov bl, 0x0F
     int 0x10
     
     mov si, mt
+    mov bl, 0x0F
     call print_string
     
     popa
@@ -793,6 +794,7 @@ date_msg db 'Current date: ', 0
 ; Выводит дату в формате HH.MM.SS
 print_time:
     mov si, time_msg
+    mov bl, 0x0F
     call print_string
     
     pusha
@@ -806,49 +808,50 @@ print_time:
     mov al, ch
     shr al, 4
     add al, '0'  ; Преобразовать в ASCII
-    mov bl, 0x0B
+    mov bl, 0x0F
     int 0x10     ; Выводим
     mov al, ch
     and al, 0x0F
     add al, '0'  ; Преобразовать в ASCII
-    mov bl, 0x0B
+    mov bl, 0x0F
     int 0x10     ; Выводим
 
     ; Вывести разделитель
     mov al, ':'
-    mov bl, 0x0B
+    mov bl, 0x0F
     int 0x10
 
     ; Вывести минуты
     mov al, cl
     shr al, 4
     add al, '0'
-    mov bl, 0x0B
+    mov bl, 0x0F
     int 0x10
     mov al, cl
     and al, 0x0F
     add al, '0'
-    mov bl, 0x0B
+    mov bl, 0x0F
     int 0x10
 
     ; Вывести разделитель
     mov al, ':'
-    mov bl, 0x0B
+    mov bl, 0x0F
     int 0x10
 
     ; Вывести секунды
     mov al, dh
     shr al, 4
     add al, '0'
-    mov bl, 0x0B
+    mov bl, 0x0F
     int 0x10
     mov al, dh
     and al, 0x0F
     add al, '0'
-    mov bl, 0x0B
+    mov bl, 0x0F
     int 0x10
     
     mov si, mt
+    mov bl, 0x0F
     call print_string
     
     popa
@@ -860,6 +863,7 @@ time_msg db 'Current time: ', 0
 
 load_program:
     mov si, load_prompt
+    mov bl, 0x0F
     call print_string
     call read_number  ; Читаем номер сектора
     call print_newline
@@ -907,10 +911,10 @@ read_number:
 
 .done_read:
     mov byte [di], 0  ; Завершаем строку нулевым символом
-    call convert_to_number  ; Преобразуем строку в число
+    call utils_convert_to_number  ; Преобразуем строку в число
     ret
 
-convert_to_number:
+kernel_convert_to_number:
     mov si, number_buffer
     xor ax, ax
     xor cx, cx
@@ -942,7 +946,8 @@ start_program:
 
 .disk_error:
     mov si, disk_error_msg
-    call print_string_red
+    mov bl, 0x0C
+    call print_string
     popa
     ret
 
@@ -978,7 +983,9 @@ buffer db 512 dup(0)
 command_buffer db 128 dup(0)
 
 ; ===================== Debug print for command buffer =====================
+global print_command_buffer
 print_command_buffer:
     mov si, command_buffer
-    call print_string_cyan
+    mov bl, 0x0B
+    call print_string
     ret

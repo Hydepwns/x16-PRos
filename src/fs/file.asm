@@ -4,6 +4,7 @@
 %include "src/fs/recovery.asm"
 %include "src/lib/constants.inc"
 %include "src/lib/error_codes.inc"
+%include "src/fs/fat.inc"
 
 ; External error handling functions
 extern set_error

@@ -5,6 +5,12 @@
 section .data
 test_data: db "Test data"
 test_data_len equ $ - test_data
+test_data_size equ test_data_len
+
+test_data2: db "Updated test data"
+test_data2_size equ $ - test_data2
+
+test_buffer: resb 256
 
 ; Common test filenames
 test_filename: db "TEST    TXT", 0

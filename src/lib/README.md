@@ -6,10 +6,14 @@ This directory contains common utility functions and macros used throughout the 
 
 ### `constants.inc`
 
-Centralized file for all global constants and macros used throughout x16-PRos. All new constants should be added here, and duplication in other files should be avoided. 
+Centralized file for all global constants and macros used throughout x16-PRos. All new constants should be added here, and duplication in other files should be avoided.
 
 **Include Order Convention:**
 All assembly files should place `%include` statements (especially for `constants.inc`) at the very top, before any use of constants or ORG directives.
+
+### `error_codes.inc`
+
+Definitions for system-wide error codes. Used for consistent error reporting across modules.
 
 ### `io.inc`
 
@@ -66,6 +70,10 @@ Memory management operations:
 - Memory validation
 - All functions preserve registers (ax, cx, dx, si, di)
 
+### `app.inc`
+
+Provides common functions, macros, and constants tailored for application development within x16-PRos. Facilitates interaction with OS services and standard library features. Registers ax, cx, dx, si, di are preserved by its functions.
+
 ## Register Preservation
 
 All library functions preserve the following registers:
@@ -109,3 +117,57 @@ Functions use the following conventions:
 - AX register for numeric returns
 - DI register for string buffer positions
 - CX register for string lengths
+
+# Library Overview
+
+*For detailed macros, constants, and function documentation, see the canonical include files in this directory.*
+
+## Purpose
+
+The `lib/` directory provides shared macros, constants, and utility functions for all x16-PRos modules, supporting code reuse and consistency.
+
+## Key Responsibilities
+
+- Centralized global constants and macros
+- Common utility and string functions
+- Input/output and user interface helpers
+- Memory management routines
+- Application development support
+
+## Directory Structure
+
+```bash
+lib/
+  constants.inc   # Global constants and macros
+  error_codes.inc # System-wide error codes
+  io.inc          # Input/output functions
+  utils.inc       # General utilities
+  ui.inc          # User interface helpers
+  memory.inc      # Memory management
+  app.inc         # Application support macros
+  ...             # Additional shared includes
+```
+
+For detailed documentation, see comments in each `.inc` file.
+
+## Interfaces & APIs
+
+- Provides macros and callable routines for use by all system and application code.
+- Canonical interface and usage documentation is in the respective `.inc` files.
+
+## Error Handling
+
+- Defines standard error codes in `error_codes.inc` and `constants.inc`.
+- Error handling conventions are described in [ARCHITECTURE.md#error-handling](../../ARCHITECTURE.md#error-handling).
+
+## Build & Integration
+
+- All modules include relevant `.inc` files from `lib/` at the top of each source file.
+- No special build steps; included as part of standard assembly and linking.
+
+## References & Further Reading
+
+- [ARCHITECTURE.md](../../ARCHITECTURE.md)
+- [src/README.md](../README.md)
+- [src/core/README.md](../core/README.md)
+- [src/fs/README.md](../fs/README.md)

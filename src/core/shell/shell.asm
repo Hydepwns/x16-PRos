@@ -4,6 +4,18 @@
 %include "src/lib/io.inc"
 %include "src/lib/utils.inc"
 
+extern print_command_buffer
+extern print_help
+extern print_interface
+extern clear_screen
+extern print_CPU_info
+extern get_date
+extern get_time
+extern shutdown
+extern reboot
+extern launch_writer
+extern launch_brainf
+
 section .data
     prompt db "x16-PRos> ", 0
     command_buffer times COMMAND_BUFFER_SIZE db 0
@@ -20,12 +32,16 @@ section .data
     writer_str db "writer", 0
     brainf_str db "brainf", 0
 
+    ; Add definition for unknown_cmd
+    global unknown_cmd
+    unknown_cmd db "Unknown command", 0
+
 section .text
 
 ; Initialize shell
 shell_init:
     mov si, prompt
-    call print_string_white
+    print_string_white
     ret
 
 ; Main shell loop
@@ -177,7 +193,7 @@ execute_command:
     
     ; Unknown command
     mov si, unknown_cmd
-    call print_string_red
+    print_string_red
     ret
 
 ; Command handlers

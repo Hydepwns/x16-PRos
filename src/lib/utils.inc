@@ -76,7 +76,7 @@ string_to_number:
 ; si - pointer to string
 ; Returns: ax = number
 ; Preserves: bx, cx, dx, si
-convert_to_number:
+utils_convert_to_number:
     push bx
     push cx
     push dx
@@ -139,16 +139,8 @@ number_to_string:
 ; dh - row
 ; dl - column
 ; Preserves: ax, cx, dx, si, di
-set_cursor_pos:
-    push ax
-    push cx
-    push dx
-    mov ah, 2h
-    xor bh, bh
-    int 10h
-    pop dx
-    pop cx
-    pop ax
-    ret
+%ifndef UI_INCLUDED
+extern set_cursor_pos
+%endif
 
 %endif
