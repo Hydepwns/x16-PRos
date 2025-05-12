@@ -38,62 +38,62 @@ set_build_mode release
 
 echo -e "${GREEN}Build mode: $BUILD_MODE${NC}"
 
-# Example: set output directory based on build mode
-if [ "$BUILD_MODE" = "test" ]; then
-    OUTDIR="temp/bin"
-else
-    OUTDIR="release/bin"
-fi
+RELDIR="release"
+BINDIR="$RELDIR/bin"
+OBJDIR="$BINDIR/obj"
+IMGDIR="$RELDIR/img"
+LOGDIR="$RELDIR/log"
 
-echo -e "${GREEN}Creating output directories${NC}"
-mkdir -p release/bin
-mkdir -p release/img
+# Create output directories
+mkdir -p "$BINDIR" "$OBJDIR" "$IMGDIR" "$LOGDIR"
 
-echo -e "${GREEN}Compiling the bootloader${NC}"
-nasm -f bin src/core/boot.asm -o release/bin/boot.bin
+# Compile the bootloader
+nasm -f bin src/core/boot.asm -o "$BINDIR/boot.bin"
 
-echo -e "${GREEN}Compiling the kernel and programs${NC}"
-nasm -f bin -Isrc/lib/ src/core/kernel.asm -o release/bin/kernel.bin
-nasm -f bin -Isrc/lib/ src/apps/write.asm -o release/bin/write.bin
-nasm -f bin -Isrc/lib/ src/apps/brainf.asm -o release/bin/brainf.bin
-nasm -f bin -Isrc/lib/ src/apps/barchart.asm -o release/bin/barchart.bin
-nasm -f bin -Isrc/lib/ src/apps/snake.asm -o release/bin/snake.bin
-nasm -f bin -Isrc/lib/ src/apps/calc.asm -o release/bin/calc.bin
+# Compile the kernel and programs
+nasm -f bin -Isrc/lib/ src/core/kernel.asm -o "$BINDIR/kernel.bin"
+nasm -f bin -Isrc/lib/ src/apps/write.asm -o "$BINDIR/write.bin"
+nasm -f bin -Isrc/lib/ src/apps/brainf.asm -o "$BINDIR/brainf.bin"
+nasm -f bin -Isrc/lib/ src/apps/barchart.asm -o "$BINDIR/barchart.bin"
+nasm -f bin -Isrc/lib/ src/apps/snake.asm -o "$BINDIR/snake.bin"
+nasm -f bin -Isrc/lib/ src/apps/calc.asm -o "$BINDIR/calc.bin"
 
-echo -e "${GREEN}Compiling file system components to ELF objects${NC}"
-nasm -f elf32 -Isrc/lib/ src/lib/io.asm -o temp/bin/obj/io.o
-nasm -f elf32 -Isrc/fs/ -Isrc/lib/ src/fs/errors.asm -o temp/bin/obj/errors.o
-nasm -f elf32 -Isrc/fs/ -Isrc/lib/ src/fs/fat.asm -o temp/bin/obj/fat.o
-nasm -f elf32 -Isrc/fs/ -Isrc/lib/ src/fs/file.asm -o temp/bin/obj/file.o
-nasm -f elf32 -Isrc/fs/ -Isrc/lib/ src/fs/recovery.asm -o temp/bin/obj/recovery.o
+# Compile file system components to ELF objects
+nasm -f elf32 -Isrc/lib/ src/lib/io.asm -o "$OBJDIR/io.o"
+nasm -f elf32 -Isrc/fs/ -Isrc/lib/ src/fs/errors.asm -o "$OBJDIR/errors.o"
+nasm -f elf32 -Isrc/fs/ -Isrc/lib/ src/fs/fat.asm -o "$OBJDIR/fat.o"
+nasm -f elf32 -Isrc/fs/ -Isrc/lib/ src/fs/file.asm -o "$OBJDIR/file.o"
+nasm -f elf32 -Isrc/fs/ -Isrc/lib/ src/fs/recovery.asm -o "$OBJDIR/recovery.o"
 
-echo -e "${GREEN}Linking file system components into fs.bin${NC}"
-x86_64-elf-ld -T src/link.ld -o temp/bin/fs.bin temp/bin/obj/io.o temp/bin/obj/errors.o temp/bin/obj/fat.o temp/bin/obj/file.o temp/bin/obj/recovery.o
+# Link file system components into fs.bin
+x86_64-elf-ld -T src/link.ld -o "$BINDIR/fs.bin" "$OBJDIR/io.o" "$OBJDIR/errors.o" "$OBJDIR/fat.o" "$OBJDIR/file.o" "$OBJDIR/recovery.o"
 
-echo -e "${GREEN}Creating a disk image${NC}"
-# Initialize disk image (e.g., 25 sectors of 512 bytes, adjust as needed)
-# Let's use a slightly larger image for now, 2880 sectors for 1.44MB floppy
-dd if=/dev/zero of=release/img/x16pros.img bs=512 count=2880
+# Create a disk image
+# 2880 sectors for 1.44MB floppy
+DDIMG="$IMGDIR/x16pros.img"
+dd if=/dev/zero of="$DDIMG" bs=512 count=2880
 
-echo -e "${GREEN}Writing components to disk image${NC}"
-dd if=bin/boot.bin of=release/img/x16pros.img conv=notrunc
-dd if=temp/bin/fs.bin of=release/img/x16pros.img bs=512 seek=1 conv=notrunc
-# Assuming fs.bin fits within 4 sectors for now (1 boot + 4 fs = 5). Kernel starts at sector 5.
-# This might need adjustment based on the actual size of fs.bin
-dd if=bin/kernel.bin of=release/img/x16pros.img bs=512 seek=9 conv=notrunc
-# Adjust seek for applications based on new kernel position
-dd if=bin/write.bin of=release/img/x16pros.img bs=512 seek=10 conv=notrunc
-dd if=bin/brainf.bin of=release/img/x16pros.img bs=512 seek=13 conv=notrunc
-dd if=bin/barchart.bin of=release/img/x16pros.img bs=512 seek=16 conv=notrunc
-dd if=bin/snake.bin of=release/img/x16pros.img bs=512 seek=18 conv=notrunc
-dd if=bin/calc.bin of=release/img/x16pros.img bs=512 seek=20 conv=notrunc
+# Write components to disk image
+# Boot sector
+dd if="$BINDIR/boot.bin" of="$DDIMG" conv=notrunc
+# File system (fs.bin) at sector 1
+dd if="$BINDIR/fs.bin" of="$DDIMG" bs=512 seek=1 conv=notrunc
+# Kernel at sector 9
+dd if="$BINDIR/kernel.bin" of="$DDIMG" bs=512 seek=9 conv=notrunc
+# Applications at subsequent sectors
+# (adjust seek as needed)
+dd if="$BINDIR/write.bin" of="$DDIMG" bs=512 seek=10 conv=notrunc
+dd if="$BINDIR/brainf.bin" of="$DDIMG" bs=512 seek=13 conv=notrunc
+dd if="$BINDIR/barchart.bin" of="$DDIMG" bs=512 seek=16 conv=notrunc
+dd if="$BINDIR/snake.bin" of="$DDIMG" bs=512 seek=18 conv=notrunc
+dd if="$BINDIR/calc.bin" of="$DDIMG" bs=512 seek=20 conv=notrunc
 
 echo -e "${GREEN}Done.${NC}"
 
 echo -e "${GREEN}${LOGO}${NC}"
 
 echo -e "${GREEN}Launching QEMU...${NC}"
-qemu-system-i386 -hda release/img/x16pros.img -m 128M -serial stdio
+qemu-system-i386 -hda "$DDIMG" -m 128M -serial stdio
 
 echo -e "${GREEN}Compiling the kernel core modules as ELF objects${NC}"
 # List of core modules (relative to src/core/)
@@ -110,15 +110,15 @@ CORE_MODULES=(
 KERNEL_OBJS=""
 for module in "${CORE_MODULES[@]}"; do
     name=$(basename "$module")
-    objfile="temp/bin/obj/${name}.o"
+    objfile="$OBJDIR/${name}.o"
     srcfile="src/core/${module}.asm"
     nasm -f elf32 "$srcfile" -o "$objfile"
     KERNEL_OBJS="$KERNEL_OBJS $objfile"
 done
 
 echo -e "${GREEN}Linking all core modules into a single kernel.bin${NC}"
-x86_64-elf-ld -T src/link.ld -o release/bin/kernel.bin "$KERNEL_OBJS" temp/bin/obj/io.o
+x86_64-elf-ld -T src/link.ld -o "$BINDIR/kernel.bin" "$KERNEL_OBJS" "$OBJDIR/io.o"
 
 # Write kernel.bin to the disk image at sector 9 (after boot and fs)
 echo -e "${GREEN}Writing kernel.bin to disk image at sector 9${NC}"
-dd if=release/bin/kernel.bin of=release/img/x16pros.img bs=512 seek=9 conv=notrunc
+dd if="$BINDIR/kernel.bin" of="$DDIMG" bs=512 seek=9 conv=notrunc

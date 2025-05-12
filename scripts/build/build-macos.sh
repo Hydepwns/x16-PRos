@@ -57,64 +57,30 @@ set_build_mode release
 
 echo -e "${GREEN}Build mode: $BUILD_MODE${NC}"
 
-# Example: set output directory based on build mode
-if [ "$BUILD_MODE" = "test" ]; then
-    OUTDIR="temp/"
-else
-    OUTDIR="release/"
-fi
-
-# Check required commands
-echo -e "${GREEN}Checking required tools...${NC}"
-check_command nasm
-check_command x86_64-elf-gcc
-check_command x86_64-elf-ld
-
-# Clean build artifacts if requested
-if [ $CLEAN_BUILD -eq 1 ]; then
-    echo -e "${GREEN}Cleaning build artifacts...${NC}"
-    rm -rf release/bin/*
-    rm -rf release/img/*
-fi
-
-# Check source files
-echo -e "${GREEN}Checking source files...${NC}"
-check_file "src/core/boot.asm"
-check_file "src/fs/fat.asm"
-check_file "src/fs/file.asm"
-check_file "src/fs/errors.asm"
-check_file "src/fs/recovery.asm"
-check_file "src/lib/io.asm"
-check_file "src/link.ld"
+# Set output directories for release mode
+RELDIR="release"
+BINDIR="$RELDIR/bin"
+OBJDIR="$BINDIR/obj"
+IMGDIR="$RELDIR/img"
+LOGDIR="$RELDIR/log"
 
 # Create necessary directories
-echo -e "${GREEN}Creating directories...${NC}"
-mkdir -p release/bin
-check_error "Failed to create release/bin directory"
-mkdir -p release/bin/obj
-check_error "Failed to create release/bin/obj directory"
-mkdir -p release/img
-check_error "Failed to create release/img directory"
-
-# Check directory permissions
-check_dir_writable "release/bin"
-check_dir_writable "release/bin/obj"
-check_dir_writable "release/img"
+mkdir -p "$BINDIR" "$OBJDIR" "$IMGDIR" "$LOGDIR"
 
 # Build the boot sector
 echo -e "${GREEN}Building boot sector...${NC}"
 if [ $VERBOSE -eq 1 ]; then
-    echo "nasm -f bin src/core/boot.asm -o $OUTDIR/boot.bin"
+    echo "nasm -f bin src/core/boot.asm -o $BINDIR/boot.bin"
 fi
-nasm -f bin src/core/boot.asm -o $OUTDIR/boot.bin
+nasm -f bin src/core/boot.asm -o "$BINDIR/boot.bin"
 check_error "Failed to build boot sector"
 
 # Build the IO library
 echo -e "${GREEN}Building IO library...${NC}"
 if [ $VERBOSE -eq 1 ]; then
-    echo "nasm -f elf32 src/lib/io.asm -o $OUTDIR/obj/io.o"
+    echo "nasm -f elf32 src/lib/io.asm -o $OBJDIR/io.o"
 fi
-nasm -f elf32 src/lib/io.asm -o $OUTDIR/obj/io.o
+nasm -f elf32 src/lib/io.asm -o "$OBJDIR/io.o"
 check_error "Failed to build IO library"
 
 # Build the file system components
@@ -122,32 +88,32 @@ echo -e "${GREEN}Building file system components...${NC}"
 
 # Build errors module first
 if [ $VERBOSE -eq 1 ]; then
-    echo "nasm -f elf32 src/fs/errors.asm -o $OUTDIR/obj/errors.o"
+    echo "nasm -f elf32 src/fs/errors.asm -o $OBJDIR/errors.o"
 fi
-nasm -f elf32 src/fs/errors.asm -o $OUTDIR/obj/errors.o
+nasm -f elf32 src/fs/errors.asm -o "$OBJDIR/errors.o"
 check_error "Failed to build errors module"
 
 # Build other file system components
-FS_LINK_OBJS="$OUTDIR/obj/io.o $OUTDIR/obj/errors.o"
+FS_LINK_OBJS="$OBJDIR/io.o $OBJDIR/errors.o"
 for component in "fat" "file" "recovery"; do
     if [ "$component" = "dir" ]; then
         continue
     fi
 
     if [ $VERBOSE -eq 1 ]; then
-        echo "nasm -f elf32 src/fs/${component}.asm -o $OUTDIR/obj/${component}.o"
+        echo "nasm -f elf32 src/fs/${component}.asm -o $OBJDIR/${component}.o"
     fi
-    nasm -f elf32 src/fs/${component}.asm -o $OUTDIR/obj/${component}.o
+    nasm -f elf32 src/fs/${component}.asm -o "$OBJDIR/${component}.o"
     check_error "Failed to build ${component} module"
-    FS_LINK_OBJS="$FS_LINK_OBJS $OUTDIR/obj/${component}.o"
+    FS_LINK_OBJS="$FS_LINK_OBJS $OBJDIR/${component}.o"
 done
 
 # Link file system components
 echo -e "${GREEN}Linking file system components...${NC}"
 if [ $VERBOSE -eq 1 ]; then
-    echo "x86_64-elf-ld -T src/link.ld -o $OUTDIR/fs.bin ${FS_LINK_OBJS}"
+    echo "x86_64-elf-ld -T src/link.ld -o $BINDIR/fs.bin ${FS_LINK_OBJS}"
 fi
-x86_64-elf-ld -T src/link.ld -o $OUTDIR/fs.bin "$FS_LINK_OBJS"
+x86_64-elf-ld -T src/link.ld -o "$BINDIR/fs.bin" "$FS_LINK_OBJS"
 check_error "Failed to link file system components"
 
 # Create disk image
@@ -160,16 +126,16 @@ check_error "Failed to create disk image"
 
 # Write boot sector
 if [ $VERBOSE -eq 1 ]; then
-    echo "dd if=$OUTDIR/boot.bin of=$IMGDIR/x16pros.img conv=notrunc"
+    echo "dd if=$BINDIR/boot.bin of=$IMGDIR/x16pros.img conv=notrunc"
 fi
-dd if=$OUTDIR/boot.bin of="$IMGDIR/x16pros.img" conv=notrunc
+dd if="$BINDIR/boot.bin" of="$IMGDIR/x16pros.img" conv=notrunc
 check_error "Failed to write boot sector"
 
 # Write with file system
 if [ $VERBOSE -eq 1 ]; then
-    echo "dd if=$OUTDIR/fs.bin of=$IMGDIR/x16pros.img bs=$SECTOR_SIZE seek=1 conv=notrunc"
+    echo "dd if=$BINDIR/fs.bin of=$IMGDIR/x16pros.img bs=$SECTOR_SIZE seek=1 conv=notrunc"
 fi
-dd if=$OUTDIR/fs.bin of="$IMGDIR/x16pros.img" bs="$SECTOR_SIZE" seek=1 conv=notrunc
+dd if="$BINDIR/fs.bin" of="$IMGDIR/x16pros.img" bs="$SECTOR_SIZE" seek=1 conv=notrunc
 check_error "Failed to write file system"
 
 # Build core modules as ELF objects
@@ -187,7 +153,7 @@ CORE_MODULES=(
 KERNEL_OBJS=""
 for module in "${CORE_MODULES[@]}"; do
     name=$(basename "$module")
-    objfile="$OUTDIR/obj/${name}.o"
+    objfile="$OBJDIR/${name}.o"
     srcfile="src/core/${module}.asm"
     if [ $VERBOSE -eq 1 ]; then
         echo "nasm -f elf32 $srcfile -o $objfile"
@@ -199,16 +165,16 @@ done
 
 # Link all core modules into a single kernel.bin
 if [ $VERBOSE -eq 1 ]; then
-    echo "x86_64-elf-ld -T src/link.ld -o $OUTDIR/kernel.bin $KERNEL_OBJS $OUTDIR/obj/io.o"
+    echo "x86_64-elf-ld -T src/link.ld -o $BINDIR/kernel.bin $KERNEL_OBJS $OBJDIR/io.o"
 fi
-x86_64-elf-ld -T src/link.ld -o $OUTDIR/kernel.bin "$KERNEL_OBJS" $OUTDIR/obj/io.o
+x86_64-elf-ld -T src/link.ld -o "$BINDIR/kernel.bin" $KERNEL_OBJS $OBJDIR/io.o
 check_error "Failed to link kernel binary"
 
 # Write kernel.bin to the disk image (e.g., sector 9)
 if [ $VERBOSE -eq 1 ]; then
-    echo "dd if=$OUTDIR/kernel.bin of=$IMGDIR/x16pros.img bs=$SECTOR_SIZE seek=9 conv=notrunc"
+    echo "dd if=$BINDIR/kernel.bin of=$IMGDIR/x16pros.img bs=$SECTOR_SIZE seek=9 conv=notrunc"
 fi
-dd if=$OUTDIR/kernel.bin of="$IMGDIR/x16pros.img" bs="$SECTOR_SIZE" seek=9 conv=notrunc
+dd if="$BINDIR/kernel.bin" of="$IMGDIR/x16pros.img" bs="$SECTOR_SIZE" seek=9 conv=notrunc
 check_error "Failed to write kernel"
 
 # Run tests if requested

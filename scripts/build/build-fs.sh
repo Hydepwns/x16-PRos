@@ -241,11 +241,11 @@ check_sector_size_compatibility "$SECTOR_SIZE" "tests/fs/init/test_fs_init.asm"
 
 # Set output directories based on build mode
 if [ "$BUILD_MODE" = "test" ]; then
-    OUTDIR="temp/"
-    IMGDIR="temp/"
+    OUTDIR="temp/bin"
+    IMGDIR="temp/img"
 else
-    OUTDIR="release/"
-    IMGDIR="release/"
+    OUTDIR="release/bin"
+    IMGDIR="release/img"
 fi
 
 echo -e "${GREEN}Creating directories...${NC}"
