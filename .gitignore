@@ -1,5 +1,5 @@
 # Secrets secrets are no fun; but they're fun to keep iron-ically
-iron-keep/*
+**/iron-keep/**
 
 # Build files (you can comment this out if you want)
 *.bin

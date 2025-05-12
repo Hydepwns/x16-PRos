@@ -71,20 +71,21 @@
   - Moved test files to dedicated `tests` directory.
   - Updated build scripts for the new project structure and to integrate new build system features.
   - Updated build process documentation to reflect new structure and features.
-  - Refactored `scripts/build/build-linux.sh`:
+  - Refactored `scripts/build/build.sh`:
     - File system components (`io.asm`, `errors.asm`, `fat.asm`, `file.asm`, `recovery.asm`) now compile to ELF32 objects.
     - ELF objects are linked into a single `fs.bin`.
     - `fs.bin` is written to the disk image, with kernel and application sector offsets adjusted.
     - Toolchain check for `x86_64-elf-ld` added.
     - Creates `bin/obj` directory for intermediate object files.
     - Standardized disk image size to 1.44MB.
+    - Aligned application binary inclusion (`snake.asm`, `calc.asm`) with `build.sh`.
   - Refactored `scripts/build/build-windows.bat`:
     - Adopted ELF32 object and linking model for file system components, similar to Linux/macOS.
     - Added check for `ld.exe` (ELF linker).
     - File system objects are linked into `fs.bin` and written to the disk image.
     - Kernel and application sector offsets adjusted.
     - Standardized disk image size to 1.44MB.
-    - Aligned application binary inclusion (`snake.asm`, `calc.asm`) with `build-linux.sh`.
+    - Aligned application binary inclusion (`snake.asm`, `calc.asm`) with `build.sh`.
     - Creates `bin\obj` directory for intermediate object files.
 - Directory Entry Structure
   - Updated to 32-byte entries for better field alignment
@@ -128,8 +129,7 @@
   - All logs are placed in `log/`.
   - Build scripts for all platforms (Linux, macOS, Windows) have been updated to use this structure, ensuring consistency and easier artifact management.
 - Refactored all build scripts to ensure correct directory creation and output placement, including:
-  - `scripts/build/build-linux.sh`
-  - `scripts/build/build-macos.sh`
+  - `scripts/build/build.sh`
   - `scripts/build/build-windows.bat`
   - `scripts/build/build-fs.sh`
   - `scripts/tests/build-tests.sh`
@@ -142,6 +142,14 @@
   - Cleans up backup files after auto-fixes.
   - Provides warnings for missing externs.
 - Updated documentation and comments in scripts to reflect the new directory structure and linter improvements.
+- Made `tests/fs/dir/test_dir_consistency.asm` fully standalone for NASM `bin` output:
+  - Removed all external `%include` and `extern` dependencies.
+  - Inlined all required directory routines and constants.
+  - File can now be assembled and run as a pure, self-contained binary with no external dependencies.
+- Documented the process for converting modular NASM test files to standalone binaries.
+- Documentation
+  - All major README files now include a terse, up-to-date directory structure section at the top, using a short code block and brief comments for clarity. This helps new contributors and users quickly understand the project layout.
+  - Legacy/obsolete files and sections are now clearly marked as such in the relevant README files.
 
 ### Fixed
 

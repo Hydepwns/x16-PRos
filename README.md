@@ -9,7 +9,7 @@
   <a href="https://x16-pros.netlify.app/">
     <img src="https://img.shields.io/badge/x16%20PRos-web%20site-blue.svg?style=for-the-badge" height="40">
   </a>
-  
+
 </div>
 
 ---
@@ -63,9 +63,8 @@ See [scripts/README.md](scripts/README.md) for full build and test instructions 
  cd x16-PRos
 
 # Build (macOS/Linux/Windows)
- ./scripts/build/build-macos.sh
- # or ./scripts/build/build-linux.sh
- # or scripts\build\build-windows.bat
+ ./scripts/build/build.sh
+ # or scripts/build/build-windows.bat
 
 # Run in QEMU
  qemu-system-i386 -hda release/img/x16pros.img -m 128M -serial stdio
@@ -78,10 +77,10 @@ See [scripts/README.md](scripts/README.md) for full build and test instructions 
 You can add your own program to the disk image and run it with the `load` command:
 
 ```sh
-dd if=YourProgram.bin of=release/img/x16pros.img bs=512 seek=DiskSector conv=notrunc
+dd if=YourProgram.bin of=release/img/x16pros.img bs=512 seek=KERNEL_END_SECTOR conv=notrunc
 ```
 
-See [scripts/README.md](scripts/README.md) for details.
+> **Note:** Sector 10 is the start of the kernel (see KERNEL_START_SECTOR in src/lib/constants.inc). Place your program after the kernel. If your kernel is N sectors, use sector 10+N for your program. Always check the kernel size before choosing the sector for new programs.
 
 ---
 
@@ -109,4 +108,32 @@ See [scripts/README.md](scripts/README.md) for details.
 
 ---
 
+## Build & Test System Overview
+
+- **Strict separation of test and production builds:** Test scripts and outputs are always written to `temp/`, while production (release) artifacts are written to `release/`. Test code is never included in production builds.
+- **Modular build system:** Each binary (kernel, file system, apps, tests) is linked only with the modules it requires. No unnecessary or test modules are included in production artifacts.
+- **Config-driven test system:** Tests are built and run using configuration files (`modules.conf`, `tests.conf`), making it easy to add or modify tests without changing scripts.
+- **Standalone boot sector tests:** Most tests are now written as fully self-contained boot sector binaries. These are assembled with `nasm -f bin` and do not require linking or objcopy. All code and data for the test is in a single `.asm` file. Only rare, complex integration tests use a loader or require linking.
+
+See [scripts/README.md](scripts/README.md) and [tests/README.md](tests/README.md) for full details on the build and test system.
+
+---
+
+## Directory Structure (Top Level)
+
+```text
+.
+├── src/      # Source code (kernel, fs, apps, libs)
+├── tests/    # Test sources, scripts, configs
+├── scripts/  # Build and utility scripts
+├── release/  # Production artifacts
+├── temp/     # Test/build output (not versioned)
+├── assets/   # Screenshots, gifs, etc
+```
+
 Distributed under the MIT License.
+
+To build the system on Linux or macOS, run:
+```sh
+scripts/build/build.sh
+```

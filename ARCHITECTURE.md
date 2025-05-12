@@ -1,5 +1,17 @@
 # x16-PRos Architecture
 
+## Directory Structure (Top Level)
+
+```text
+.
+├── src/      # Source code (kernel, fs, apps, libs)
+├── tests/    # Test sources, scripts, configs
+├── scripts/  # Build and utility scripts
+├── release/  # Production artifacts
+├── temp/     # Test/build output (not versioned)
+├── assets/   # Screenshots, gifs, etc
+```
+
 ## System Overview
 
 x16-PRos is a modular operating system with three main components:
@@ -54,9 +66,10 @@ ld -T link.ld -o temp/bin/kernel.bin temp/bin/obj/kernel.o temp/bin/obj/shell.o 
 
 ```sh
 Sector 0: Boot Sector (boot.bin)
-Sector 1+: File System (fs.bin)
-Sector N: Kernel (kernel.bin)
-Sector N+M: Applications (*.bin)
+Sector 1: File System (fs.bin)
+Sectors 2–5: FAT
+Sectors 6–9: Root Directory
+Sector 10+: Kernel (kernel.bin, see KERNEL_START_SECTOR in src/lib/constants.inc), then apps
 ```
 
 For full build options and configuration, see [scripts/README.md](scripts/README.md).
@@ -72,6 +85,20 @@ x16-PRos uses a unified error handling system across all modules. Error codes ar
 ## Testing Architecture
 
 The test suite provides comprehensive coverage using standardized macros, reusable data, and automated runners. All test scripts and runners are in `scripts/tests/`, and all test output is written to `temp/`. For test structure, categories, and framework, see [tests/README.md](tests/README.md).
+
+**Standalone Test Binaries:**
+
+- Some test files (e.g., `tests/fs/dir/test_dir_consistency.asm`) can be built as fully standalone, self-contained binaries for direct execution in emulators or on hardware.
+- To achieve this, all external includes, macros, and dependencies must be removed or inlined, and all routines must be defined within the file.
+- This approach is useful for low-level or boot sector testing, and for environments where linking or test frameworks are not available.
+
+---
+
+## Modular Build & Test Separation
+
+- **Strict separation of test and production builds:** All test scripts and outputs are written to `temp/`, while production (release) artifacts are written to `release/`. Test code is never included in production builds.
+- **Modular linking logic:** Each binary (kernel, file system, apps, tests) is linked only with the modules it requires. No unnecessary or test modules are included in production artifacts, preventing symbol conflicts and ensuring clean builds.
+- **Standalone vs. integration tests:** Some tests are fully standalone (linked only with minimal support objects), while others are integration tests (linked with core modules). This distinction is reflected in the test build scripts and config files, and ensures clear test coverage.
 
 ---
 

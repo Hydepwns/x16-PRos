@@ -14,9 +14,9 @@ SECTIONS
     /* IO library */
     . = 0x8000;
     .io : {
-        bin/io.o(.text)
-        bin/io.o(.data)
-        bin/io.o(.bss)
+        io.o(.text)
+        io.o(.data)
+        io.o(.bss)
     }
     
     /* File system components */
