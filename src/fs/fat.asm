@@ -490,4 +490,42 @@ fat_is_valid:
     mov ax, 1 ; ZF=0
     ret
 
+; Free all clusters in a chain
+; Input: AX = starting cluster
+; Output: CF = 0 if successful, CF = 1 if error
+;         AX = last cluster freed or error code
+fat_free_chain:
+    push bx
+    push dx
+    push si
+    mov si, ax            ; SI = current cluster
+.next:
+    cmp si, FAT_FREE
+    je .done              ; Already free
+    cmp si, 0xFFF         ; End of chain (FAT12 EOF)
+    jae .done
+    mov ax, si
+    call fat_next         ; AX = next cluster, CF set on error
+    jc .fail
+    mov dx, ax            ; DX = next cluster
+    mov ax, si
+    call fat_free         ; Free current cluster
+    jc .fail
+    mov si, dx            ; Move to next cluster
+    jmp .next
+.done:
+    mov al, ERR_NONE
+    call set_error
+    clc
+    pop si
+    pop dx
+    pop bx
+    ret
+.fail:
+    stc
+    pop si
+    pop dx
+    pop bx
+    ret
+
 %endif ; FAT_INCLUDED 

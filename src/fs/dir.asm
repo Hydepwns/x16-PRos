@@ -9,7 +9,6 @@ extern get_error
 extern print_error
 
 ; Include directory modules
-%include "src/fs/dir/core.asm"
 %include "src/fs/dir/list.asm"
 %include "src/fs/dir/helpers.asm"
 

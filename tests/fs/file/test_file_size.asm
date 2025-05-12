@@ -6,9 +6,9 @@
 
 ; Include file functions
 %include "src/fs/file.asm"
-%include "src/fs/fat.asm"
 %include "src/fs/recovery.asm"
 %include "src/lib/constants.inc"
+%include "src/fs/fat.inc"
 
 TEST_START
     ; Initialize FAT

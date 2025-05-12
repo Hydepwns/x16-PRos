@@ -5,7 +5,7 @@
 %include "tests/test_framework.inc"
 %include "src/lib/constants.inc"
 %include "src/fs/fat/check.asm"
-%include "src/fs/fat.asm"
+%include "src/fs/fat.inc"
 
 section .text
     global test_fat_chain_validation
@@ -25,8 +25,8 @@ test_fat_chain_validation:
     mov di, 0xB800           ; Bitmap buffer
     call fat_validate_chain
     cmp ax, 0
-    jne .fail_valid
-    TEST_MESSAGE "FAT chain validation: valid chain passed"
+    jne fail_valid
+    TEST_MESSAGE msg_valid_chain, "FAT chain validation: valid chain passed"
 
     ; --- Case 2: Cycle (2 -> 3 -> 2) ---
     mov word [es:4], 0x003   ; cluster 2 = 3
@@ -36,8 +36,8 @@ test_fat_chain_validation:
     mov di, 0xB800
     call fat_validate_chain
     cmp ax, 1
-    jne .fail_cycle
-    TEST_MESSAGE "FAT chain validation: cycle detected correctly"
+    jne fail_cycle
+    TEST_MESSAGE msg_cycle, "FAT chain validation: cycle detected correctly"
 
     ; --- Case 3: Invalid cluster (2 -> 9999) ---
     mov word [es:4], 9999    ; cluster 2 = 9999 (invalid)
@@ -46,8 +46,8 @@ test_fat_chain_validation:
     mov di, 0xB800
     call fat_validate_chain
     cmp ax, 2
-    jne .fail_invalid
-    TEST_MESSAGE "FAT chain validation: invalid cluster detected correctly"
+    jne fail_invalid
+    TEST_MESSAGE msg_invalid, "FAT chain validation: invalid cluster detected correctly"
 
     ; --- Case 4: Premature end (2 -> 0) ---
     mov word [es:4], 0x000   ; cluster 2 = 0 (invalid/premature end)
@@ -56,8 +56,8 @@ test_fat_chain_validation:
     mov di, 0xB800
     call fat_validate_chain
     cmp ax, 2
-    jne .fail_premature
-    TEST_MESSAGE "FAT chain validation: premature end detected correctly"
+    jne fail_premature
+    TEST_MESSAGE msg_premature, "FAT chain validation: premature end detected correctly"
 
     ; --- Case 5: Double-allocation (2 -> 3, 3 -> EOF, 4 -> 3) ---
     ; This is not detected by a single chain walk, but can be checked by walking both 2 and 4
@@ -70,15 +70,15 @@ test_fat_chain_validation:
     mov di, 0xB800
     call fat_validate_chain
     cmp ax, 0
-    jne .fail_double1
-    TEST_MESSAGE "FAT chain validation: double-allocation (first walk) passed"
+    jne fail_double1
+    TEST_MESSAGE msg_double1, "FAT chain validation: double-allocation (first walk) passed"
     ; Now, walk from 4 (should detect cycle, since 3 is already visited in previous walk if bitmap is reused)
     mov si, 4
     mov di, 0xB800
     call fat_validate_chain
     cmp ax, 1
-    jne .fail_double2
-    TEST_MESSAGE "FAT chain validation: double-allocation (second walk) detected as cycle"
+    jne fail_double2
+    TEST_MESSAGE msg_double2, "FAT chain validation: double-allocation (second walk) detected as cycle"
 
     ; --- Case 6: Orphaned cluster (cluster 5 marked as used, not referenced) ---
     mov word [es:10], 0xFF8  ; cluster 5 = EOF (orphaned, not in any chain)
@@ -87,23 +87,23 @@ test_fat_chain_validation:
     mov di, 0xB800
     call fat_validate_chain
     cmp ax, 0
-    jne .fail_orphan
-    TEST_MESSAGE "FAT chain validation: orphaned cluster (not detected by single chain walk, as expected)"
+    jne fail_orphan
+    TEST_MESSAGE msg_orphan, "FAT chain validation: orphaned cluster (not detected by single chain walk, as expected)"
 
     TEST_END
 
-.fail_valid:
+fail_valid:
     TEST_ERROR "FAT chain validation: valid chain failed"
-.fail_cycle:
+fail_cycle:
     TEST_ERROR "FAT chain validation: cycle not detected"
-.fail_invalid:
+fail_invalid:
     TEST_ERROR "FAT chain validation: invalid cluster not detected"
-.fail_premature:
+fail_premature:
     TEST_ERROR "FAT chain validation: premature end not detected"
-.fail_double1:
+fail_double1:
     TEST_ERROR "FAT chain validation: double-allocation (first walk) failed"
-.fail_double2:
+fail_double2:
     TEST_ERROR "FAT chain validation: double-allocation (second walk) not detected as cycle"
-.fail_orphan:
+fail_orphan:
     TEST_ERROR "FAT chain validation: orphaned cluster test failed"
     TEST_END

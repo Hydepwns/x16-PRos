@@ -1,5 +1,10 @@
 [BITS 16]
 
+global dir_init
+global dir_find
+global dir_create
+global dir_delete
+
 ; Include guard
 %ifndef DIR_CORE_INCLUDED
 %define DIR_CORE_INCLUDED

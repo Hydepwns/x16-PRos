@@ -12,6 +12,12 @@ extern get_error
 extern print_error
 extern print_string
 
+; External directory functions
+extern dir_create
+extern dir_find
+extern dir_delete
+extern dir_init
+
 ; Sector size configuration
 %ifndef SECTOR_SIZE
     %define SECTOR_SIZE 512
@@ -524,4 +530,71 @@ file_write:
     pop dx
     pop cx
     pop bx
+    ret 
+
+; Initialize file system for file operations
+; Input: None
+; Output: CF=0 if success, CF=1 if error
+file_init:
+    call fat_init
+    jc .fail
+    call dir_init
+    jc .fail
+    mov al, ERR_NONE
+    call set_error
+    clc
+    ret
+.fail:
+    stc
+    ret
+
+; Check if a file exists
+; Input: DS:SI = pointer to filename (8.3 format)
+; Output: CF=0 if file exists, CF=1 if not
+file_exists:
+    call dir_find
+    jc .not_found
+    mov al, ERR_NONE
+    call set_error
+    clc
+    ret
+.not_found:
+    stc
+    ret 
+
+; Get file size
+; Input: DS:SI = pointer to filename (8.3 format)
+; Output: AX = file size (low 16 bits), DX = high byte (if needed), CF=1 if error
+file_size:
+    push bx
+    push cx
+    push dx
+    push si
+    call dir_find
+    jc .not_found
+    mov bx, DIR_BUFFER
+    mov es, bx
+    mov bx, ax
+    mov ax, [es:bx + DIR_SIZE_OFFSET]
+    mov dl, [es:bx + DIR_SIZE_OFFSET + 2]
+    mov dh, 0
+    clc
+    jmp .done
+.not_found:
+    stc
+.done:
+    pop si
+    pop dx
+    pop cx
+    pop bx
+    ret
+
+; Alias for file_size
+file_get_size:
+    jmp file_size
+
+; Attempt to recover file size (stub)
+recover_file_size:
+    ; For now, just return error
+    stc
     ret 
