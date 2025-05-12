@@ -121,6 +121,27 @@
   - Major expansion of `scripts/README.md` to serve as the canonical reference for all build and test scripts, including quick start, platform-specific instructions, disk image layout, troubleshooting, and extension guidelines.
   - Unified and clarified modular build scripts for macOS, Linux, and Windows: all core modules are now built as ELF objects and linked into a single kernel binary; only the boot sector and apps are built as flat binaries.
   - Updated documentation to consistently refer to the new modular build process and script locations.
+- Unified build and test output directory structure across all platforms (Linux, macOS, Windows):
+  - All object files are now placed in `bin/obj` subdirectories under `release/` or `temp/` as appropriate.
+  - All binaries are placed in `bin/`.
+  - All disk images are placed in `img/`.
+  - All logs are placed in `log/`.
+  - Build scripts for all platforms (Linux, macOS, Windows) have been updated to use this structure, ensuring consistency and easier artifact management.
+- Refactored all build scripts to ensure correct directory creation and output placement, including:
+  - `scripts/build/build-linux.sh`
+  - `scripts/build/build-macos.sh`
+  - `scripts/build/build-windows.bat`
+  - `scripts/build/build-fs.sh`
+  - `scripts/tests/build-tests.sh`
+  - `scripts/tests/run_tests.sh`
+- Improved and finalized the modular assembly linter script (`scripts/tests/lint_modular_asm.sh`):
+  - Ensures aggregator modules are not built as objects.
+  - Guarantees only one implementation of each global error function.
+  - Removes direct includes of `errors.asm` except in the correct file.
+  - Cleans up unnecessary `global` directives from helper functions.
+  - Cleans up backup files after auto-fixes.
+  - Provides warnings for missing externs.
+- Updated documentation and comments in scripts to reflect the new directory structure and linter improvements.
 
 ### Fixed
 
