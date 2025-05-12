@@ -1,4 +1,4 @@
-# Build & Utility Scripts Overview
+# Build & Utility Scripts
 
 ## Structure
 
@@ -8,10 +8,10 @@
 
 ## Build System
 
-- Test outputs: `temp/`, release: `release/`
-- Modular: Only needed modules linked per binary
-- Standalone boot sector tests: `nasm -f bin`, no linking/objcopy, all code/data in one `.asm`
-  - For `-f bin`: do NOT use `section .text`/`.data`. Use `%ifidn __OUTPUT_FORMAT__, "bin"` for `ORG`.
+- Test output: `temp/`, release: `release/`
+- Modular: Only needed modules linked
+- Standalone boot sector tests: `nasm -f bin`, all code/data in one `.asm`
+  - For `-f bin`: no `section .text`/`.data`. Use `%ifidn __OUTPUT_FORMAT__, "bin"` for `ORG`.
 - Config-driven: `modules.conf`, `tests.conf`
 
 ## Quick Start
@@ -51,4 +51,4 @@
 
 ## Disk Image Check
 
-- `scripts/utils/check-image.sh`: Verifies image, boot sig, FS, FAT, kernel, boot
+- `utils/check-image.sh`: Verifies image, boot sig, FS, FAT, kernel, boot

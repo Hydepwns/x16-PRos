@@ -110,12 +110,12 @@ dd if=YourProgram.bin of=release/img/x16pros.img bs=512 seek=KERNEL_END_SECTOR c
 
 ## Build & Test System Overview
 
-- **Strict separation of test and production builds:** Test scripts and outputs are always written to `temp/`, while production (release) artifacts are written to `release/`. Test code is never included in production builds.
-- **Modular build system:** Each binary (kernel, file system, apps, tests) is linked only with the modules it requires. No unnecessary or test modules are included in production artifacts.
-- **Config-driven test system:** Tests are built and run using configuration files (`modules.conf`, `tests.conf`), making it easy to add or modify tests without changing scripts.
-- **Standalone boot sector tests:** Most tests are now written as fully self-contained boot sector binaries. These are assembled with `nasm -f bin` and do not require linking or objcopy. All code and data for the test is in a single `.asm` file. Only rare, complex integration tests use a loader or require linking.
+- Test output: `temp/`, release: `release/`. Test code never in production.
+- Modular: Each binary links only needed modules. No test code in release.
+- Config-driven: Tests built/run via `modules.conf`, `tests.conf`.
+- Standalone boot sector tests: `nasm -f bin`, all code/data in one `.asm`. No linking/objcopy. Rare integration tests use a loader.
 
-See [scripts/README.md](scripts/README.md) and [tests/README.md](tests/README.md) for full details on the build and test system.
+See [scripts/README.md](scripts/README.md) and [tests/README.md](tests/README.md) for full details.
 
 ---
 
