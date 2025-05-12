@@ -53,12 +53,8 @@ extern error_code
 %endmacro
 
 %macro TEST_MESSAGE 2
-    %ifndef TEST_MESSAGE_DATA_SECTION
-        %define TEST_MESSAGE_DATA_SECTION
-        section .data
-    %endif
-    %1: db %2, 13, 10, 0
     section .text
+    %1: db %2, 13, 10, 0
     mov si, %1
     call print_string
 %endmacro

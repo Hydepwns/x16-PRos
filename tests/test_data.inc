@@ -10,6 +10,7 @@ test_data_size equ test_data_len
 test_data2: db "Updated test data"
 test_data2_size equ $ - test_data2
 
+section .bss
 test_buffer: resb 256
 
 ; Common test filenames

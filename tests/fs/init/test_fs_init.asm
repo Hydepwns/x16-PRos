@@ -4,11 +4,9 @@
 %include "tests/test_framework.inc"
 
 ; Include FAT and directory functions
-%include "src/fs/fat.asm"
-%include "src/fs/dir.asm"
-%include "src/lib/constants.inc"
 %include "src/fs/fat.inc"
 %include "src/fs/dir/dir.inc"
+%include "src/lib/constants.inc"
 
 TEST_START
     ; Test 1: Validate sector size
