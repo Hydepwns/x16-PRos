@@ -1,25 +1,30 @@
-# x16-PRos Applications Overview
+# x16-PRos Applications
 
-This directory contains user and system applications for x16-PRos, demonstrating and extending OS functionality.
+User and system apps for x16-PRos. Showcases and extends OS features.
 
 ## Directory Structure
 
-```bash
+```text
 apps/
-  calc.asm     # Calculator application
+  calc.asm     # Calculator
   snake.asm    # Snake game
-  brainf.asm   # Brainfuck interpreter
-  barchart.asm # Bar chart visualization
-  clock.asm    # Clock/time application
+  brainf.asm   # Brainfuck
+  barchart.asm # Bar chart
+  clock.asm    # Clock/time
   write.asm    # Text editor
-  ...          # Additional applications
+  ...
 ```
-
-- See code comments in each application for implementation details and usage.
+- See code comments in each app for usage/details.
 
 ## Where to Go Next
 
-- [../core/README.md](../core/README.md) — Core OS modules and system call interfaces
-- [../lib/README.md](../lib/README.md) — Libraries, macros, and constants
-- [../../ARCHITECTURE.md](../../ARCHITECTURE.md) — System architecture and build process
-- [../README.md](../README.md) — Source tree overview
+- [../core/README.md][core-readme] — Core/system calls
+- [../lib/README.md][lib-readme] — Libraries/macros/constants
+- [../../ARCHITECTURE.md][arch] — Architecture/build
+- [../README.md][src-readme] — Source tree
+
+<!-- Reference-style links -->
+[arch]: ../../ARCHITECTURE.md
+[src-readme]: ../README.md
+[core-readme]: ../core/README.md
+[lib-readme]: ../lib/README.md
