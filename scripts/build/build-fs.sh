@@ -123,6 +123,7 @@ show_usage() {
     echo "                      floppy144  (1.44MB, 2880 sectors)"
     echo "                      floppy288  (2.88MB, 5760 sectors)"
     echo "                      hdd        (10MB, 20480 sectors)"
+    echo "  -m, --mode MODE      Build mode: 'release' (default) or 'test'"
     echo "  -h, --help          Show this help message"
     echo
     echo "Examples:"
@@ -136,6 +137,10 @@ show_usage() {
 DISK_SECTORS=$DEFAULT_SECTORS
 DISK_BYTES=""
 SECTOR_SIZE=$DEFAULT_SECTOR_SIZE
+
+# Add variable for build mode
+default_build_mode=release
+BUILD_MODE="$default_build_mode"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -175,6 +180,10 @@ while [[ $# -gt 0 ]]; do
                     exit 1
                     ;;
             esac
+            shift 2
+            ;;
+        -m|--mode)
+            BUILD_MODE="$2"
             shift 2
             ;;
         -h|--help)
@@ -222,7 +231,6 @@ check_file "src/fs/fat.asm"
 check_file "src/fs/file.asm"
 check_file "src/fs/errors.asm"
 check_file "src/fs/recovery.asm"
-check_file "tests/fs/dir/test_dir.asm"
 check_file "tests/fs/fat/test_fat.asm"
 check_file "tests/fs/file/test_file.asm"
 check_file "tests/fs/init/test_fs_init.asm"
@@ -234,7 +242,6 @@ check_sector_size_compatibility "$SECTOR_SIZE" "src/fs/fat.asm"
 check_sector_size_compatibility "$SECTOR_SIZE" "src/fs/file.asm"
 check_sector_size_compatibility "$SECTOR_SIZE" "src/fs/errors.asm"
 check_sector_size_compatibility "$SECTOR_SIZE" "src/fs/recovery.asm"
-check_sector_size_compatibility "$SECTOR_SIZE" "tests/fs/dir/test_dir.asm"
 check_sector_size_compatibility "$SECTOR_SIZE" "tests/fs/fat/test_fat.asm"
 check_sector_size_compatibility "$SECTOR_SIZE" "tests/fs/file/test_file.asm"
 check_sector_size_compatibility "$SECTOR_SIZE" "tests/fs/init/test_fs_init.asm"
@@ -262,97 +269,51 @@ echo -e "${GREEN}Building x16FS-Lite...${NC}"
 echo -e "${GREEN}Disk size: $((DISK_SECTORS * SECTOR_SIZE)) bytes ($DISK_SECTORS sectors)${NC}"
 echo -e "${GREEN}Sector size: $SECTOR_SIZE bytes${NC}"
 
-# Set build mode to release (default for this script)
-set_build_mode release
+# Set build mode based on argument (default is release)
+set_build_mode "$BUILD_MODE"
 
 echo -e "${GREEN}Build mode: $BUILD_MODE${NC}"
 
-# Assemble boot sector
-echo -e "${GREEN}Assembling boot sector...${NC}"
+# Assemble boot sector as flat binary
 nasm -f bin src/core/boot.asm -o "$OUTDIR/boot.bin"
 check_error "Failed to assemble boot sector"
 validate_binary_size "$OUTDIR/boot.bin" "$SECTOR_SIZE"
 
-# Assemble FAT implementation
-echo -e "${GREEN}Assembling FAT implementation...${NC}"
-nasm -f bin src/fs/fat.asm -o "$OUTDIR/fat.bin"
-check_error "Failed to assemble FAT implementation"
-validate_binary_size "$OUTDIR/fat.bin" 762  # FAT12 implementation size
+# Assemble IO library as ELF object
+nasm -f elf32 src/lib/io.asm -o "$OUTDIR/io.o"
+check_error "Failed to assemble IO library"
 
-# Assemble file operations
-echo -e "${GREEN}Assembling file operations...${NC}"
-nasm -f bin src/fs/file.asm -o "$OUTDIR/file.bin"
-check_error "Failed to assemble file operations"
-
-# Assemble error handling
-echo -e "${GREEN}Assembling error handling...${NC}"
-nasm -f bin src/fs/errors.asm -o "$OUTDIR/errors.bin"
+# Assemble error handling as ELF object
+nasm -f elf32 src/fs/errors.asm -o "$OUTDIR/errors.o"
 check_error "Failed to assemble error handling"
 
-# Assemble recovery mechanisms
-echo -e "${GREEN}Assembling recovery mechanisms...${NC}"
-nasm -f bin src/fs/recovery.asm -o "$OUTDIR/recovery.bin"
+# Assemble FAT, file, and recovery as ELF objects
+nasm -f elf32 src/fs/fat.asm -o "$OUTDIR/fat.o"
+check_error "Failed to assemble FAT implementation"
+nasm -f elf32 src/fs/file.asm -o "$OUTDIR/file.o"
+check_error "Failed to assemble file operations"
+nasm -f elf32 src/fs/recovery.asm -o "$OUTDIR/recovery.o"
 check_error "Failed to assemble recovery mechanisms"
 
-# Assemble test programs only in test mode
-if [ "$BUILD_MODE" = "test" ]; then
-    echo -e "${GREEN}Assembling test programs...${NC}"
-    nasm -f bin tests/fs/dir/test_dir.asm -o "$OUTDIR/test_dir.bin"
-    check_error "Failed to assemble directory test program"
-    nasm -f bin tests/fs/fat/test_fat.asm -o "$OUTDIR/test_fat.bin"
-    check_error "Failed to assemble FAT test program"
-    nasm -f bin tests/fs/file/test_file.asm -o "$OUTDIR/test_file.bin"
-    check_error "Failed to assemble file test program"
-    nasm -f bin tests/fs/init/test_fs_init.asm -o "$OUTDIR/test_fs_init.bin"
-    check_error "Failed to assemble filesystem initialization test program"
-fi
+# Assemble directory core as ELF object
+nasm -f elf32 src/fs/dir/core.asm -o "$OUTDIR/dir.o"
+check_error "Failed to assemble directory core"
 
-# Create disk image
-echo -e "${GREEN}Creating disk image...${NC}"
-dd if=/dev/zero of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" count="$DISK_SECTORS" 2>/dev/null
-check_error "Failed to create disk image"
+# Link fs.bin from all fs objects
+(cd "$OUTDIR" && x86_64-elf-ld -T ../../src/link.ld -o fs.bin io.o errors.o fat.o file.o recovery.o dir.o)
+check_error "Failed to link fs.bin"
 
-# Verify disk image size
-validate_binary_size "$IMGDIR/x16fs.img" $((DISK_SECTORS * SECTOR_SIZE))
+# Write boot sector at sector 0
+# Write fs.bin at sector 1
+# Remove old per-module .bin writing for fat, file, recovery, errors
 
-# Write components to disk image
-echo -e "${GREEN}Writing components to disk image...${NC}"
-
-# Boot sector at sector 0
 dd if="$OUTDIR/boot.bin" of="$IMGDIR/x16fs.img" conv=notrunc 2>/dev/null
 check_error "Failed to write boot sector"
+dd if="$OUTDIR/fs.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=1 conv=notrunc 2>/dev/null
+check_error "Failed to write file system"
 
-# Test programs at sector 1 (4 sectors, in test mode)
-if [ "$BUILD_MODE" = "test" ]; then
-    dd if="$OUTDIR/test_dir.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=1 conv=notrunc 2>/dev/null
-    check_error "Failed to write directory test program"
-    dd if="$OUTDIR/test_fat.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=2 conv=notrunc 2>/dev/null
-    check_error "Failed to write FAT test program"
-    dd if="$OUTDIR/test_file.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=3 conv=notrunc 2>/dev/null
-    check_error "Failed to write file test program"
-    dd if="$OUTDIR/test_fs_init.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=4 conv=notrunc 2>/dev/null
-    check_error "Failed to write filesystem initialization test program"
-fi
-
-# FAT at sector 5 (4 sectors)
-dd if="$OUTDIR/fat.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=5 conv=notrunc 2>/dev/null
-check_error "Failed to write FAT"
-
-# Directory at sector 9 (4 sectors)
-dd if="$OUTDIR/dir.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=9 conv=notrunc 2>/dev/null
-check_error "Failed to write directory"
-
-# File operations at sector 13
-dd if="$OUTDIR/file.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=13 conv=notrunc 2>/dev/null
-check_error "Failed to write file operations"
-
-# Error handling at sector 14
-dd if="$OUTDIR/errors.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=14 conv=notrunc 2>/dev/null
-check_error "Failed to write error handling"
-
-# Recovery mechanisms at sector 15
-dd if="$OUTDIR/recovery.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=15 conv=notrunc 2>/dev/null
-check_error "Failed to write recovery mechanisms"
+# Remove old per-module .bin creation and writing for fat, file, recovery, errors
+# (Do not write dir.bin, file.bin, errors.bin, recovery.bin, fat.bin individually)
 
 # Verify disk image integrity
 echo -e "${GREEN}Verifying disk image integrity...${NC}"
@@ -361,13 +322,46 @@ if ! dd if="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" count=1 2>/dev/null | grep -q "
     exit 1
 fi
 
+# --- KERNEL BUILD AND WRITE STEPS (added) ---
+
+# Assemble core kernel modules as ELF objects
+CORE_MODULES=(
+  "services/cpu"
+  "services/loader"
+  "services/services"
+  "shell/shell"
+  "memory/memory"
+  "interrupts/interrupts"
+  "process/process"
+  "kernel"
+)
+KERNEL_OBJS=""
+for module in "${CORE_MODULES[@]}"; do
+    name=$(basename "$module")
+    objfile="${name}.o"
+    srcfile="src/core/${module}.asm"
+    nasm -f elf32 "$srcfile" -o "$OUTDIR/$objfile"
+    check_error "Failed to assemble $name object file"
+    KERNEL_OBJS="$KERNEL_OBJS $objfile"
+done
+
+# Link all core modules into a single kernel.bin (plus io.o and errors.o)
+(cd "$OUTDIR" && x86_64-elf-ld -T ../../src/link.ld -o kernel.bin $KERNEL_OBJS io.o errors.o)
+check_error "Failed to link kernel binary"
+
+# NOTE: KERNEL_START_SECTOR is defined in src/lib/constants.inc and must match this value
+# Write kernel.bin to the disk image at sector 10
+dd if="$OUTDIR/kernel.bin" of="$IMGDIR/x16fs.img" bs="$SECTOR_SIZE" seek=10 conv=notrunc 2>/dev/null
+check_error "Failed to write kernel"
+# --- END KERNEL STEPS ---
+
 echo -e "${GREEN}Build completed successfully!${NC}"
 echo -e "${GREEN}Disk image created at: $IMGDIR/x16fs.img${NC}"
 echo -e "${GREEN}Disk size: $((DISK_SECTORS * SECTOR_SIZE)) bytes ($DISK_SECTORS sectors)${NC}"
 echo -e "${GREEN}Sector size: $SECTOR_SIZE bytes${NC}"
 
 # Ask if user wants to run in QEMU
-read -p "Do you want to run the disk image in QEMU? (y/n) " -n 1 -r
+read -p "Run image in QEMU? (y/n) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]
 then

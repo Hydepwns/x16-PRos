@@ -127,4 +127,73 @@ get_disk_params() {
 export DEFAULT_SECTORS
 export DEFAULT_SECTOR_SIZE
 export VALID_SECTOR_SIZES
-export VALID_DISK_FORMATS 
+export VALID_DISK_FORMATS
+
+# --- Shared Logging Functions ---
+log_info() {
+    echo -e "$(date '+%H:%M:%S') ${BLUE}[INFO]${NC} $1"
+}
+
+log_error() {
+    echo -e "$(date '+%H:%M:%S') ${RED}[ERROR]${NC} $1" >&2
+}
+
+log_phase() {
+    echo -e "\n$(date '+%H:%M:%S') ${YELLOW}=== $1 ===${NC}"
+}
+
+# --- NASM Assembler Wrapper ---
+# Usage: assemble_nasm <src> <out> <format> <macros> <includes>
+assemble_nasm() {
+    local src="$1"
+    local out="$2"
+    local format="$3"
+    local macros="$4"
+    local includes="$5"
+    log_info "Assembling $src -> $out (format: $format)"
+    local nasm_cmd=(nasm -f "$format")
+    # Add macros if provided
+    if [ -n "$macros" ]; then
+        for macro in $macros; do
+            nasm_cmd+=("-D$macro")
+        done
+    fi
+    # Add includes if provided
+    if [ -n "$includes" ]; then
+        for inc in $includes; do
+            nasm_cmd+=("-I$inc")
+        done
+    fi
+    nasm_cmd+=("$src" -o "$out")
+    "${nasm_cmd[@]}"
+    if [ $? -ne 0 ]; then
+        log_error "NASM failed: $src"
+        exit 1
+    fi
+}
+
+# --- Linker Wrapper ---
+# Usage: link_obj <objs> <out>
+link_obj() {
+    local objs="$1"
+    local out="$2"
+    log_info "Linking $objs -> $out"
+    x86_64-elf-ld -m elf_i386 -e _start -static $objs -o "$out"
+    if [ $? -ne 0 ]; then
+        log_error "Link failed: $out"
+        exit 1
+    fi
+}
+
+# --- Objcopy Wrapper ---
+# Usage: objcopy_bin <in> <out>
+objcopy_bin() {
+    local in_file="$1"
+    local out_file="$2"
+    log_info "Objcopy $in_file -> $out_file"
+    x86_64-elf-objcopy -O binary "$in_file" "$out_file"
+    if [ $? -ne 0 ]; then
+        log_error "Objcopy failed: $in_file"
+        exit 1
+    fi
+} 
