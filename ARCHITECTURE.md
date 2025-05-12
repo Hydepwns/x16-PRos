@@ -16,9 +16,9 @@
 
 x16-PRos is a modular operating system with three main components:
 
-- **Core System:** Memory, process, interrupt, and system service management ([src/core/README.md](src/core/README.md))
-- **File System:** FAT implementation, directory and file operations, error recovery ([src/fs/README.md](src/fs/README.md))
-- **Testing Framework:** Automated tests, macros, runners, and scripts ([tests/README.md](tests/README.md))
+- **Core System:** Memory, process, interrupt, and system service management ([core][core-readme])
+- **File System:** FAT implementation, directory and file operations, error recovery ([fs][fs-readme])
+- **Testing Framework:** Automated tests, macros, runners, and scripts ([tests][tests-readme])
 
 See the linked subdocs for detailed responsibilities and interfaces.
 
@@ -30,10 +30,10 @@ See the linked subdocs for detailed responsibilities and interfaces.
 |------------------------|------------------------------------------------|----------------------------|
 | `src/`                 | Source code (core, fs, apps, libs)             | -                          |
 | `tests/`               | Test sources, macros, runners, scripts          | Test scripts, test data   |
-| `temp/`                | **All dev/test build & run output**             | ISO,BIN/OBJ,.IMG,...      |
-| `release/`             | **Production release artifacts only**           | ISO,BIN/OBJ,.IMG,...      |
+| `temp/`                | **All dev/test build & run output**             | ISO,BIN/OBJ,IMG,...      |
+| `release/`             | **Production release artifacts only**           | ISO,BIN/OBJ,IMG,...      |
 | `scripts/build/`       | Build scripts                                    | -                        |
-| `scripts/tests/`       | Test scripts                                      | -                        |
+| `scripts/tests/`       | Test scripts                                     | -                        |
 | `scripts/utils/`       | Utility scripts                                  | -                        |
 
 - *`.gitkeep` files are used in `temp/` and `release/` subdirectories to ensure empty directories are tracked by git.*
@@ -44,9 +44,11 @@ See the linked subdocs for detailed responsibilities and interfaces.
 
 ## Component Architecture
 
-- **Core System:** Manages low-level OS services. See [src/core/README.md](src/core/README.md).
-- **File System:** Provides persistent storage and file/directory management. See [src/fs/README.md](src/fs/README.md).
-- **Testing Framework:** Ensures correctness and reliability. See [tests/README.md](tests/README.md).
+- **Core System:** Manages low-level OS services. See [core][core-readme].
+- **File System:** Provides persistent storage and file/directory management. See [fs][fs-readme].
+- **Testing Framework:** Ensures correctness and reliability. See [tests][tests-readme].
+- **Libraries:** Shared utilities and macros. See [lib][lib-readme].
+- **Applications:** User/system apps. See [apps][apps-readme].
 
 ---
 
@@ -72,44 +74,50 @@ Sectors 6–9: Root Directory
 Sector 10+: Kernel (kernel.bin, see KERNEL_START_SECTOR in src/lib/constants.inc), then apps
 ```
 
-For full build options and configuration, see [scripts/README.md](scripts/README.md).
-
----
+For full build options and configuration, see [build system][scripts-readme].
 
 ## Error Handling
 
-x16-PRos uses a unified error handling system across all modules. Error codes are defined in [`src/lib/error_codes.inc`](src/lib/error_codes.inc) and [`src/lib/constants.inc`](src/lib/constants.inc). Functions set the Carry Flag (CF) on error and return an error code in AX. For the canonical list and details, see the linked files.
-
----
+Error codes in [error_codes.inc][error-codes] and [constants.inc][constants]. Functions set CF on error, return code in AX.
 
 ## Testing Architecture
 
-The test suite provides comprehensive coverage using standardized macros, reusable data, and automated runners. All test scripts and runners are in `scripts/tests/`, and all test output is written to `temp/`. For test structure, categories, and framework, see [tests/README.md](tests/README.md).
+Tests use macros and runners in [test scripts][scripts-tests]. Output goes to `temp/`. See [tests][tests-readme].
 
-**Standalone Test Binaries:**
+**Standalone Tests:**
 
-- Some test files (e.g., `tests/fs/dir/test_dir_consistency.asm`) can be built as fully standalone, self-contained binaries for direct execution in emulators or on hardware.
-- To achieve this, all external includes, macros, and dependencies must be removed or inlined, and all routines must be defined within the file.
-- This approach is useful for low-level or boot sector testing, and for environments where linking or test frameworks are not available.
+- Some tests (e.g. `tests/fs/dir/test_dir_consistency.asm`) run as standalone binaries
+- No external deps - all code/data in one file
+- Good for boot sector tests and bare metal
 
----
+## Build & Test System
 
-## Modular Build & Test Separation
-
-- **Strict separation of test and production builds:** All test scripts and outputs are written to `temp/`, while production (release) artifacts are written to `release/`. Test code is never included in production builds.
-- **Modular linking logic:** Each binary (kernel, file system, apps, tests) is linked only with the modules it requires. No unnecessary or test modules are included in production artifacts, preventing symbol conflicts and ensuring clean builds.
-- **Standalone vs. integration tests:** Some tests are fully standalone (linked only with minimal support objects), while others are integration tests (linked with core modules). This distinction is reflected in the test build scripts and config files, and ensures clear test coverage.
+- Tests go to `temp/`, releases to `release/`
+- Each binary links only what it needs
+- Tests are either standalone or integration
 
 ---
 
 ## References & Further Reading
 
-- [src/core/README.md](src/core/README.md) — Core system modules
-- [src/fs/README.md](src/fs/README.md) — File system modules
-- [src/lib/README.md](src/lib/README.md) — Libraries and macros
-- [src/apps/README.md](src/apps/README.md) — Applications
-- [tests/README.md](tests/README.md) — Test suite
-- [scripts/README.md](scripts/README.md) — Build system
-- [src/lib/error_codes.inc](src/lib/error_codes.inc) — Error codes
-- [src/lib/constants.inc](src/lib/constants.inc) — Constants
-- [TODO.md](TODO.md) — Future plans
+- [core][core-readme] — Core system modules
+- [fs][fs-readme] — File system modules
+- [lib][lib-readme] — Libraries and macros
+- [apps][apps-readme] — Applications
+- [tests][tests-readme] — Test suite
+- [build system][scripts-readme] — Build system
+- [error_codes.inc][error-codes] — Error codes
+- [constants.inc][constants] — Constants
+- [TODO.md][todo] — Future plans
+
+<!-- Reference-style links -->
+[core-readme]: src/core/README.md
+[fs-readme]: src/fs/README.md
+[lib-readme]: src/lib/README.md
+[apps-readme]: src/apps/README.md
+[tests-readme]: tests/README.md
+[scripts-readme]: scripts/README.md
+[scripts-tests]: scripts/tests/
+[error-codes]: src/lib/error_codes.inc
+[constants]: src/lib/constants.inc
+[todo]: TODO.md
