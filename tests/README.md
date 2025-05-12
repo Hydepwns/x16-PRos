@@ -1,6 +1,6 @@
 # x16-PRos Test Suite
 
-This directory contains all automated tests, macros, runners, and test scripts for x16-PRos. All test scripts and runners are organized here by subsystem.
+All automated tests, macros, runners, and scripts for x16-PRos live here. Tests are organized by subsystem.
 
 ## Directory Structure
 
@@ -17,40 +17,39 @@ tests/
   ...
 ```
 
-- `core/`, `fs/`, `apps/`, `src/` — Test sources for each subsystem
-- `test_framework.inc`, `test_data.inc` — (Legacy) Shared macros and data for older tests
-- `linker.ld` — (Legacy) Test linker script
-- `scripts/` — **All test, build, and utility scripts**
-- `run_tests.sh` — Main test builder (assembles all tests)
-- `run_qemu_tests.sh` — Runs all test binaries in QEMU and collects results
-- `modules.conf`, `tests.conf` — Config files listing all build targets
+- `core/`, `fs/`, `apps/`, `src/`: Test sources by subsystem
+- `test_framework.inc`, `test_data.inc`, `linker.ld`: Legacy
+- `scripts/`: All test/build/utility scripts
+- `run_tests.sh`: Main test builder
+- `run_qemu_tests.sh`: Runs all test binaries in QEMU
+- `modules.conf`, `tests.conf`: Build configs
 
-## Test Output & Artifacts
+## Test Output
 
-- **All test and development output is written to `temp/`**
-  - Object files: `temp/bin/obj/`
-  - Test binaries, images, and logs: `temp/bin/`
-- **Production-ready artifacts are only in `release/`**
+- All test/dev output: `temp/`
+  - Objects: `temp/bin/obj/`
+  - Binaries, images, logs: `temp/bin/`
+- Production artifacts: `release/`
 
-## Running Tests (Config-Driven)
+## Running Tests
 
-Build all tests:
+Build all:
 
 ```sh
 ./scripts/tests/run_tests.sh
 ```
 
-Run all tests in QEMU:
+Run all in QEMU:
 
 ```sh
 ./scripts/tests/run_qemu_tests.sh
 ```
 
-## Adding or Modifying Tests/Modules
+## Adding/Modifying Tests
 
 - Edit `scripts/tests/modules.conf` or `scripts/tests/tests.conf`.
 - Each line: `src=... out=... macros=... includes=...`
-- No script changes needed for new tests/modules.
+- No script changes needed for new tests.
 
 Example:
 
@@ -61,27 +60,21 @@ macros=SECTOR_SIZE=512 \
 includes=src
 ```
 
-- `src` — Source file path
-- `out` — Output file name
-- `macros` — Optional macros to pass to nasm
-- `includes` — Optional include paths
-
 ## Standalone Boot Sector Tests
 
-Most tests in this suite are now written as **fully self-contained boot sector binaries**. These tests:
-- Do **not** use `extern` or require linking with any external modules.
-- Contain all code and data needed for the test in a single `.asm` file.
-- Are assembled with `nasm -f bin` and padded to 512 bytes with a boot signature.
-- Can be run directly in QEMU or on real hardware as a boot sector.
+- Most tests are self-contained boot sector binaries.
+- No `extern` or linking. All code/data in one `.asm` file.
+- Assembled with `nasm -f bin`, padded to 512 bytes, boot signature at end.
+- Run directly in QEMU or on hardware.
 
-**Minimal Test Template Example:**
+**Minimal Template:**
 
 ```nasm
 [BITS 16]
 org 0x7C00
 
 start:
-    ; Test logic here
+    ; Test logic
     call print_success
     jmp $
 
@@ -120,11 +113,7 @@ dw 0xAA55
 
 See `tests/fs/dir/test_dir_consistency.asm` for a real example.
 
-## Loader/Harness-Based Test Automation (Rare)
+## Loader/Harness-Based Tests
 
-- Some rare, complex integration tests may use a loader or harness if they require a more complex environment or are not true boot sectors.
-- See [`scripts/utils/make_loader_disk.sh`](../scripts/utils/make_loader_disk.sh) and [`scripts/utils/loader.asm`](../scripts/utils/loader.asm) for details.
-
----
-
-(Sections about legacy modular linking and test framework macros can be marked as legacy or moved to the end.)
+- Rare, for complex integration.
+- See [`scripts/utils/make_loader_disk.sh`](../scripts/utils/make_loader_disk.sh) and [`scripts/utils/loader.asm`](../scripts/utils/loader.asm).
