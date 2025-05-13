@@ -25,7 +25,6 @@ MAX_CLUSTERS         equ 0xFFFF
 MAX_FILE_SIZE        equ 0xFFFFFF
 DIR_ATTR_INVALID     equ 0xC0
 TEST_ATTR_ARCHIVE    equ 0x20
-
 ; --- set_error ---
 set_error:
     mov [error_code], al
@@ -57,7 +56,7 @@ dir_create:
     call dir_create
     nop ; was: TEST_CHECK_CARRY "dir_create failed"
     mov bx, 0xFFFF
-    mov cx, 0xFFFFFF
+    mov cx, 0xFFFF
     call dir_create
     nop ; was: TEST_CHECK_CARRY "dir_create failed"
 

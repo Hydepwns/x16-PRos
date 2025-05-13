@@ -1,5 +1,5 @@
-[BITS 16]
 org 0x7C00
+[BITS 16]
 
 start:
     ; Simulate FAT test logic (replace with real logic if available)

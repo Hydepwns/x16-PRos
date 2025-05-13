@@ -171,12 +171,12 @@ check_disk:
 banner db "x16-PRos Booting...", CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, 0
 kernel_error_message db "KERNEL LOAD ERROR", CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, 0
 fat_error_message db "FAT LOAD ERROR", CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, 0
-dir_error_message db "DIR LOAD ERROR", CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, 0
-disk_error_message db "Disk [ERROR]", CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, 
+dir_error_message db "DIR LOAD ERROR", CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, 
               db "RAM  [OK]", CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, 
               db "CPU  [OK]", CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, 0
 wait_msg db "Press any key to boot...", 0
 check_msg db "Checking components:", CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, 0
+ready_message db "System ready.", CHAR_CARRIAGE_RETURN, CHAR_LINEFEED, 0
 
 ; Boot signature
 times SECTOR_SIZE-2-($-$$) db 0
