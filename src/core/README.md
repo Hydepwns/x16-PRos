@@ -56,6 +56,13 @@ core/
 - [ARCHITECTURE.md][arch]
 - [src/README.md][src-readme]
 - [../../lib/README.md][lib-readme]
+- [interrupts/README.md][int-readme]
+- [memory/README.md][mem-readme]
+- [process/README.md][proc-readme]
+- [services/README.md][svc-readme]
+- [shell/README.md][shell-readme]
+- [error_codes.inc][error-codes]
+- [constants.inc][constants]
 
 <!-- Reference-style links -->
 [arch]: ../../ARCHITECTURE.md

@@ -46,6 +46,9 @@
 - Cross-platform build fixes
 - Dir entry offsets, validation, file size, date/time
 - Test framework integration, message formatting, buffer segments, attribute defs
+- Test build script now assembles all test binaries as flat binaries (`-f bin`) and outputs them to `temp/img/fs/dir/` for correct test harness discovery.
+- Test harness (`run_tests.sh`) now finds and runs all test binaries in QEMU without missing file errors.
+- Test logs and results are now consistently written to `temp/log/` for easier review and automation.
 
 ### Future
 

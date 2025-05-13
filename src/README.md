@@ -52,12 +52,28 @@ src/
 
 ## Next
 
-- [core/README.md](core/README.md): Core modules
-- [fs/README.md](fs/README.md): FS modules
-- [lib/README.md](lib/README.md): Libs/macros
-- [apps/README.md](apps/README.md): Apps
-- [../ARCHITECTURE.md](../ARCHITECTURE.md): System/build
-- [../scripts/README.md](../scripts/README.md): Build scripts
+- [core/README.md][core-readme]: Core modules
+- [fs/README.md][fs-readme]: FS modules
+- [lib/README.md][lib-readme]: Libs/macros
+- [apps/README.md][apps-readme]: Apps
+- [../ARCHITECTURE.md][arch]: System/build
+- [../scripts/README.md][scripts-readme]: Build scripts
+
+## References
+
+- [core/README.md][core-readme]
+- [fs/README.md][fs-readme]
+- [lib/README.md][lib-readme]
+- [apps/README.md][apps-readme]
+- [../ARCHITECTURE.md][arch]
+- [../scripts/README.md][scripts-readme]
+
+[core-readme]: core/README.md
+[fs-readme]: fs/README.md
+[lib-readme]: lib/README.md
+[apps-readme]: apps/README.md
+[arch]: ../ARCHITECTURE.md
+[scripts-readme]: ../scripts/README.md
 
 ## Disk Layout
 

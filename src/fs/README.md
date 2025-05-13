@@ -74,10 +74,13 @@ fs/
 
 ## References
 
-- [Canonical Spec][arch-fs]
-- [src/README.md][src-readme]
-- [lib/README.md][lib-readme]
-- [core/README.md][core-readme]
+- [fat/README.md][fat-readme]
+- [dir/README.md][dir-readme]
+- [file/README.md][file-readme]
+- [ARCHITECTURE.md][arch]
+- [../lib/README.md][lib-readme]
+- [../core/README.md][core-readme]
+- [../README.md][src-readme]
 
 <!-- Reference-style links -->
 [arch]: ../ARCHITECTURE.md

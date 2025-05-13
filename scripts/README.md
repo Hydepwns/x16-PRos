@@ -43,12 +43,30 @@
 - run_qemu_tests.sh: Runs all test bins in QEMU
 - modules.conf/tests.conf: Build targets
 
+Test binaries are output to `temp/img/fs/dir/`, and logs/results to `temp/log/`.
+Review test results in `temp/log/` after running.
+
 ## Add/Run Tests
 
 - Edit `modules.conf`/`tests.conf`
 - Build: `./scripts/tests/run_tests.sh`
 - Run: `./scripts/tests/run_qemu_tests.sh`
 
+Test binaries: `temp/img/fs/dir/`
+Logs/results: `temp/log/`
+
 ## Disk Image Check
 
 - `utils/check-image.sh`: Verifies image, boot sig, FS, FAT, kernel, boot
+
+## References
+
+- [../README.md][root-readme] — Project overview
+- [../ARCHITECTURE.md][arch] — System architecture
+- [../src/README.md][src-readme] — Source code
+- [../tests/README.md][tests-readme] — Test suite
+
+[root-readme]: ../README.md
+[arch]: ../ARCHITECTURE.md
+[src-readme]: ../src/README.md
+[tests-readme]: ../tests/README.md

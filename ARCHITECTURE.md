@@ -84,6 +84,8 @@ Error codes in [error_codes.inc][error-codes] and [constants.inc][constants]. Fu
 
 Tests use macros and runners in [test scripts][scripts-tests]. Output goes to `temp/`. See [tests][tests-readme].
 
+**All test binaries are now output to `temp/img/fs/dir/` for harness compatibility. Logs/results are in `temp/log/`.**
+
 **Standalone Tests:**
 
 - Some tests (e.g. `tests/fs/dir/test_dir_consistency.asm`) run as standalone binaries
@@ -95,6 +97,9 @@ Tests use macros and runners in [test scripts][scripts-tests]. Output goes to `t
 - Tests go to `temp/`, releases to `release/`
 - Each binary links only what it needs
 - Tests are either standalone or integration
+
+**Test binaries: `temp/img/fs/dir/`**
+**Test logs/results: `temp/log/`**
 
 ---
 

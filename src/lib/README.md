@@ -133,6 +133,8 @@ lib/
 - [src/README.md][src-readme]
 - [core/README.md][core-readme]
 - [fs/README.md][fs-readme]
+- [error_codes.inc][error-codes]
+- [constants.inc][constants]
 
 <!-- Reference-style links -->
 [arch]: ../../ARCHITECTURE.md

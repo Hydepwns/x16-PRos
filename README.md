@@ -68,6 +68,11 @@ See [scripts/README.md](scripts/README.md) for full build and test instructions 
 
 # Run in QEMU
  qemu-system-i386 -hda release/img/x16pros.img -m 128M -serial stdio
+
+# Build and run all tests
+./scripts/tests/run_tests.sh
+# Test binaries are output to `temp/img/fs/dir/`, and logs/results to `temp/log/`.
+# Review test results in `temp/log/` after running.
 ```
 
 ---
@@ -101,10 +106,10 @@ dd if=YourProgram.bin of=release/img/x16pros.img bs=512 seek=KERNEL_END_SECTOR c
 
 ## More Documentation
 
-- [scripts/README.md](scripts/README.md) — Build & test system details
-- [ARCHITECTURE.md](ARCHITECTURE.md) — System architecture
-- [src/README.md](src/README.md) — Source code structure
-- [tests/README.md](tests/README.md) — Test framework
+- [scripts/README.md][scripts-readme] — Build & test system details
+- [ARCHITECTURE.md][arch]
+- [src/README.md][src-readme]
+- [tests/README.md][tests-readme]
 
 ---
 
@@ -114,6 +119,9 @@ dd if=YourProgram.bin of=release/img/x16pros.img bs=512 seek=KERNEL_END_SECTOR c
 - Modular: Each binary links only needed modules. No test code in release.
 - Config-driven: Tests built/run via `modules.conf`, `tests.conf`.
 - Standalone boot sector tests: `nasm -f bin`, all code/data in one `.asm`. No linking/objcopy. Rare integration tests use a loader.
+
+**Test binaries are output to `temp/img/fs/dir/` and logs/results to `temp/log/`.**
+Run all tests with `./scripts/tests/run_tests.sh` and review results in `temp/log/`.
 
 See [scripts/README.md](scripts/README.md) and [tests/README.md](tests/README.md) for full details.
 
@@ -133,7 +141,16 @@ See [scripts/README.md](scripts/README.md) and [tests/README.md](tests/README.md
 
 Distributed under the MIT License.
 
-To build the system on Linux or macOS, run:
-```sh
-scripts/build/build.sh
-```
+## References
+
+- [scripts/README.md][scripts-readme] — Build & test system details
+- [ARCHITECTURE.md][arch] — System architecture
+- [src/README.md][src-readme] — Source code structure
+- [tests/README.md][tests-readme] — Test framework
+- [CONTRIBUTING.md][contrib]
+
+[scripts-readme]: scripts/README.md
+[arch]: ARCHITECTURE.md
+[src-readme]: src/README.md
+[tests-readme]: tests/README.md
+[contrib]: CONTRIBUTING.md
