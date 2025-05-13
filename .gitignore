@@ -1,17 +1,18 @@
 # Secrets secrets are no fun; but they're fun to keep iron-ically
 **/iron-keep/**
 
-# Build files (you can comment this out if you want)
+
+# Temporary files
+*.o
+*.tmp
+*.bak
 *.bin
 *.img
 *.iso
 *.vdi
 *.vmdk
 
-# Temporary files
-*.tmp
-*.bak
-
+# Build files
 temp/*
 !temp/.gitkeep
 !temp/bin/obj/.gitkeep

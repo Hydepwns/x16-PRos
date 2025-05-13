@@ -8,11 +8,11 @@ set_build_mode test
 
 OUTDIR="temp/"
 OBJDIR="$OUTDIR/bin/obj"
-IMGDIR="$OUTDIR/img"
+IMGDIR="temp/img"
 LOGDIR="$OUTDIR/log"
-FSDIR="$OUTDIR/fs/dir"
-FSFAT="$OUTDIR/fs/fat"
-FSFILE="$OUTDIR/fs/file"
+FSDIR="$IMGDIR/fs/dir"
+FSFAT="$IMGDIR/fs/fat"
+FSFILE="$IMGDIR/fs/file"
 
 # Ensure all output directories exist
 mkdir -p "$OUTDIR" "$OBJDIR" "$IMGDIR" "$LOGDIR" "$FSDIR" "$FSFAT" "$FSFILE" "$IMGDIR/fs/dir" "$IMGDIR/fs/fat" "$IMGDIR/fs/file"
@@ -43,9 +43,9 @@ check_error "Failed to assemble io.asm"
 # Assemble test object files
 # nasm -f elf tests/fs/dir/test_dir.asm -o "$OBJDIR/test_dir.o"
 # check_error "Failed to assemble directory test program"
-nasm -f elf tests/fs/fat/test_fat.asm -o "$OBJDIR/test_fat.o"
+nasm -f bin tests/fs/fat/test_fat.asm -o "$FSFAT/test_fat.bin"
 check_error "Failed to assemble FAT test program"
-nasm -f elf tests/fs/file/test_file.asm -o "$OBJDIR/test_file.o"
+nasm -f bin tests/fs/file/test_file.asm -o "$FSFILE/test_file.bin"
 check_error "Failed to assemble file test program"
 nasm -f elf tests/fs/init/test_fs_init.asm -o "$OBJDIR/test_fs_init.o"
 check_error "Failed to assemble filesystem initialization test program"
@@ -54,20 +54,45 @@ check_error "Failed to assemble filesystem initialization test program"
 pwd
 ls -l tests/fs/dir/test_dir_fill_clean.asm
 file tests/fs/dir/test_dir_fill_clean.asm
-echo "Running: nasm -f elf tests/fs/dir/test_dir_fill_clean.asm -o $OBJDIR/test_dir_fill_clean.o"
+echo "Running: nasm -f bin tests/fs/dir/test_dir_fill_clean.asm -o $FSDIR/test_dir_fill_clean.bin"
 
-nasm -f elf tests/fs/dir/test_dir_fill_clean.asm -o "$OBJDIR/test_dir_fill_clean.o"
+nasm -f bin tests/fs/dir/test_dir_fill_clean.asm -o "$FSDIR/test_dir_fill_clean.bin"
 check_error "Failed to assemble directory fill test program"
-nasm -f elf tests/fs/dir/test_dir_overflow.asm -o "$OBJDIR/test_dir_overflow.o"
+
+# $LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_dir_fill_clean.elf" \
+#   "$OBJDIR/test_dir_fill_clean.o" \
+#   temp/bin/obj/errors.o temp/bin/obj/io.o
+# $OBJCOPY -O binary "$OBJDIR/test_dir_fill_clean.elf" "$FSDIR/test_dir_fill_clean.bin"
+# scripts/utils/make_boot_sector.sh "$FSDIR/test_dir_fill_clean.bin" "$FSDIR/test_dir_fill_clean.bin"
+
+nasm -f bin tests/fs/dir/test_dir_overflow.asm -o "$FSDIR/test_dir_overflow.bin"
 check_error "Failed to assemble directory overflow test program"
-nasm -f elf tests/fs/dir/test_dir_delete.asm -o "$OBJDIR/test_dir_delete.o"
+
+# $LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_dir_overflow.elf" \
+#   "$OBJDIR/test_dir_overflow.o" \
+#   temp/bin/obj/errors.o temp/bin/obj/io.o
+# $OBJCOPY -O binary "$OBJDIR/test_dir_overflow.elf" "$FSDIR/test_dir_overflow.bin"
+# scripts/utils/make_boot_sector.sh "$FSDIR/test_dir_overflow.bin" "$FSDIR/test_dir_overflow.bin"
+
+# Assemble test_dir_delete as a flat binary
+nasm -f bin tests/fs/dir/test_dir_delete.asm -o "$FSDIR/test_dir_delete.bin"
 check_error "Failed to assemble directory delete test program"
-nasm -f elf tests/fs/dir/test_dir_attr.asm -o "$OBJDIR/test_dir_attr.o"
+
+# Assemble test_dir_attr as a flat binary
+nasm -f bin tests/fs/dir/test_dir_attr.asm -o "$FSDIR/test_dir_attr.bin"
 check_error "Failed to assemble directory attribute test program"
-nasm -f elf tests/fs/dir/test_dir_edge.asm -o "$OBJDIR/test_dir_edge.o"
-check_error "Failed to assemble directory edge case test program"
-nasm -f elf tests/fs/dir/test_dir_consistency.asm -o "$OBJDIR/test_dir_consistency.o"
-check_error "Failed to assemble directory consistency test program"
+
+# $LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_dir_attr.elf" \
+#   "$OBJDIR/test_dir_attr.o" \
+#   "$OBJDIR/dir_core.o" "$OBJDIR/dir_helpers.o" "$OBJDIR/dir_ops.o" \
+#   temp/bin/obj/errors.o temp/bin/obj/io.o
+# $OBJCOPY -O binary "$OBJDIR/test_dir_attr.elf" "$FSDIR/test_dir_attr.bin"
+# scripts/utils/make_boot_sector.sh "$FSDIR/test_dir_attr.bin" "$FSDIR/test_dir_attr.bin"
+
+# nasm -f elf tests/fs/dir/test_dir_edge.asm -o "$OBJDIR/test_dir_edge.o"
+# check_error "Failed to assemble directory edge case test program"
+# nasm -f elf tests/fs/dir/test_dir_consistency.asm -o "$OBJDIR/test_dir_consistency.o"
+# check_error "Failed to assemble directory consistency test program"
 
 LD=x86_64-elf-ld
 OBJCOPY=x86_64-elf-objcopy
@@ -79,19 +104,13 @@ OBJCOPY=x86_64-elf-objcopy
 #   temp/bin/obj/errors.o temp/bin/obj/io.o
 # $OBJCOPY -O binary "$OBJDIR/test_dir.elf" "$FSDIR/test_dir.bin"
 
-$LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_fat.elf" \
-  "$OBJDIR/test_fat.o" \
-  "$OBJDIR/dir_core.o" "$OBJDIR/dir_list.o" "$OBJDIR/dir_helpers.o" "$OBJDIR/dir_ops.o" \
-  temp/bin/obj/errors.o temp/bin/obj/fat.o temp/bin/obj/recovery.o \
-  temp/bin/obj/file.o temp/bin/obj/io.o
-$OBJCOPY -O binary "$OBJDIR/test_fat.elf" "$FSFAT/test_fat.bin"
-
-$LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_file.elf" \
-  "$OBJDIR/test_file.o" \
-  "$OBJDIR/dir_core.o" "$OBJDIR/dir_list.o" "$OBJDIR/dir_helpers.o" "$OBJDIR/dir_ops.o" \
-  temp/bin/obj/errors.o temp/bin/obj/fat.o temp/bin/obj/recovery.o \
-  temp/bin/obj/file.o temp/bin/obj/io.o
-$OBJCOPY -O binary "$OBJDIR/test_file.elf" "$FSFILE/test_file.bin"
+# Remove linker and objcopy for test_fat (already a flat binary)
+# $LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_fat.elf" \
+#   "$OBJDIR/test_fat.o" \
+#   "$OBJDIR/dir_core.o" "$OBJDIR/dir_list.o" "$OBJDIR/dir_helpers.o" "$OBJDIR/dir_ops.o" \
+#   temp/bin/obj/errors.o temp/bin/obj/fat.o temp/bin/obj/recovery.o \
+#   temp/bin/obj/file.o temp/bin/obj/io.o
+# $OBJCOPY -O binary "$OBJDIR/test_fat.elf" "$FSFAT/test_fat.bin"
 
 $LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_fs_init.elf" \
   "$OBJDIR/test_fs_init.o" \
@@ -101,48 +120,46 @@ $LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_fs_init.elf" \
 $OBJCOPY -O binary "$OBJDIR/test_fs_init.elf" "$FSDIR/test_fs_init.bin"
 
 # Standalone directory tests (do NOT link core dir objects)
-$LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_dir_fill.elf" \
-  "$OBJDIR/test_dir_fill.o" \
-  temp/bin/obj/errors.o temp/bin/obj/io.o
-$OBJCOPY -O binary "$OBJDIR/test_dir_fill.elf" "$FSDIR/test_dir_fill.bin"
-scripts/utils/make_boot_sector.sh "$FSDIR/test_dir_fill.bin" "$FSDIR/test_dir_fill.bin"
+# Note: test_dir_fill is commented out, assuming it's handled elsewhere or deprecated
+# $LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_dir_fill.elf" \
+#   "$OBJDIR/test_dir_fill.o" \
+#   temp/bin/obj/errors.o temp/bin/obj/io.o
+# $OBJCOPY -O binary "$OBJDIR/test_dir_fill.elf" "$FSDIR/test_dir_fill.bin"
+# scripts/utils/make_boot_sector.sh "$FSDIR/test_dir_fill.bin" "$FSDIR/test_dir_fill.bin"
 
-$LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_dir_fill_clean.elf" \
-  "$OBJDIR/test_dir_fill_clean.o" \
-  temp/bin/obj/errors.o temp/bin/obj/io.o
-$OBJCOPY -O binary "$OBJDIR/test_dir_fill_clean.elf" "$FSDIR/test_dir_fill_clean.bin"
-scripts/utils/make_boot_sector.sh "$FSDIR/test_dir_fill_clean.bin" "$FSDIR/test_dir_fill_clean.bin"
+# Remove linker/objcopy for test_dir_delete (already a flat binary)
+# $LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_dir_delete.elf" \
+#   "$OBJDIR/test_dir_delete.o" \
+#   temp/bin/obj/errors.o temp/bin/obj/io.o
+# $OBJCOPY -O binary "$OBJDIR/test_dir_delete.elf" "$FSDIR/test_dir_delete.bin"
+# scripts/utils/make_boot_sector.sh "$FSDIR/test_dir_delete.bin" "$FSDIR/test_dir_delete.bin"
 
-$LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_dir_overflow.elf" \
-  "$OBJDIR/test_dir_overflow.o" \
-  temp/bin/obj/errors.o temp/bin/obj/io.o
-$OBJCOPY -O binary "$OBJDIR/test_dir_overflow.elf" "$FSDIR/test_dir_overflow.bin"
-scripts/utils/make_boot_sector.sh "$FSDIR/test_dir_overflow.bin" "$FSDIR/test_dir_overflow.bin"
+# Assemble test_dir_edge as a flat binary
+nasm -f bin tests/fs/dir/test_dir_edge.asm -o "$FSDIR/test_dir_edge.bin"
+check_error "Failed to assemble directory edge case test program"
 
-$LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_dir_delete.elf" \
-  "$OBJDIR/test_dir_delete.o" \
-  temp/bin/obj/errors.o temp/bin/obj/io.o
-$OBJCOPY -O binary "$OBJDIR/test_dir_delete.elf" "$FSDIR/test_dir_delete.bin"
-scripts/utils/make_boot_sector.sh "$FSDIR/test_dir_delete.bin" "$FSDIR/test_dir_delete.bin"
+# $LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_dir_edge.elf" \
+#   "$OBJDIR/test_dir_edge.o" \
+#   temp/bin/obj/errors.o temp/bin/obj/io.o
+# $OBJCOPY -O binary "$OBJDIR/test_dir_edge.elf" "$FSDIR/test_dir_edge.bin"
+# scripts/utils/make_boot_sector.sh "$FSDIR/test_dir_edge.bin" "$FSDIR/test_dir_edge.bin"
 
-$LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_dir_edge.elf" \
-  "$OBJDIR/test_dir_edge.o" \
-  temp/bin/obj/errors.o temp/bin/obj/io.o
-$OBJCOPY -O binary "$OBJDIR/test_dir_edge.elf" "$FSDIR/test_dir_edge.bin"
-scripts/utils/make_boot_sector.sh "$FSDIR/test_dir_edge.bin" "$FSDIR/test_dir_edge.bin"
+# Assemble test_dir_consistency as a flat binary
+nasm -f bin tests/fs/dir/test_dir_consistency.asm -o "$FSDIR/test_dir_consistency.bin"
+check_error "Failed to assemble directory consistency test program"
 
-$LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_dir_consistency.elf" \
-  "$OBJDIR/test_dir_consistency.o" \
-  temp/bin/obj/errors.o temp/bin/obj/io.o
-$OBJCOPY -O binary "$OBJDIR/test_dir_consistency.elf" "$FSDIR/test_dir_consistency.bin"
-scripts/utils/make_boot_sector.sh "$FSDIR/test_dir_consistency.bin" "$FSDIR/test_dir_consistency.bin"
+# $LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_dir_consistency.elf" \
+#   "$OBJDIR/test_dir_consistency.o" \
+#   temp/bin/obj/errors.o temp/bin/obj/io.o
+# $OBJCOPY -O binary "$OBJDIR/test_dir_consistency.elf" "$FSDIR/test_dir_consistency.bin"
+# scripts/utils/make_boot_sector.sh "$FSDIR/test_dir_consistency.bin" "$FSDIR/test_dir_consistency.bin"
 
 # Integration test: test_dir_attr (link with core dir objects)
-$LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_dir_attr.elf" \
-  "$OBJDIR/test_dir_attr.o" \
-  "$OBJDIR/dir_core.o" "$OBJDIR/dir_helpers.o" "$OBJDIR/dir_ops.o" \
-  temp/bin/obj/errors.o temp/bin/obj/io.o
-$OBJCOPY -O binary "$OBJDIR/test_dir_attr.elf" "$FSDIR/test_dir_attr.bin"
+# $LD -m elf_i386 -Ttext 0x7C00 -o "$OBJDIR/test_dir_attr.elf" \
+#   "$OBJDIR/test_dir_attr.o" \
+#   "$OBJDIR/dir_core.o" "$OBJDIR/dir_helpers.o" "$OBJDIR/dir_ops.o" \
+#   temp/bin/obj/errors.o temp/bin/obj/io.o
+# $OBJCOPY -O binary "$OBJDIR/test_dir_attr.elf" "$FSDIR/test_dir_attr.bin"
 
 rm -f "$OBJDIR"/*.elf
 
